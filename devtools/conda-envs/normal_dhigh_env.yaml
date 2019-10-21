@@ -1,0 +1,8 @@
+name: test
+dependencies:
+   # Ha ha
+   - libgfortran
+   - python >=4.7*
+   - pip:
+       - coverage
+channels:

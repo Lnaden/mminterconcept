@@ -11,10 +11,15 @@ import random
 import string
 import os
 
+class RandString:
+	@staticmethod
+	def name(length=6):
+		return ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(length))
+
 class ImportPDB:
 
-        def __init__(self, pdbID, length=6):
-                self.fname = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(length)) + '.pdb'
+        def __init__(self, pdbID):
+                self.fname = RandString.name() + '.pdb'
                 self.pdbID = pdbID
 
         def __enter__(self):

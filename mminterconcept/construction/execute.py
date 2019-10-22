@@ -20,7 +20,6 @@ class Process:
 		else:
 			os.mkdir(self.fdir)
 			os.chdir(self.fdir)
-			print(os.getcwd())
 
 		return self
 
@@ -54,6 +53,3 @@ class Process:
 
 		if os.path.isdir(self.fdir):
 			os.rmdir(self.fdir)
-
-with Process() as fp:
-	fp.run(cmd=['ls', '.'])

@@ -46,8 +46,8 @@ class Props(BaseModel):
 		super().__init__(**args)
 
 class System:
-	Box: Box
-	Species: Species
+	Box: 'SimBox'
+	Species: 'Solute'
 
 	def __init__(self, Box, Species, **args):
 		pass

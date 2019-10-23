@@ -42,29 +42,27 @@ class Gmx(Engine):
 			gmx_args['-p'] = self._gmx_args['topfname']
 			gmx_args['-i'] = self._gmx_args['posrename']
 
-			args = self._dict_to_flist(**gmx_args)
+			args = self._dict_to_str(**gmx_args)
 
 			Pdb2gmx.run(cmd=args)
 			Pdb2gmx.store(sdir=self._sdir, struct=gmx_args['-o'], top=[gmx_args['-p'], gmx_args['-i']])
 
 			self._gmx_args['ifname'] =  os.path.abspath(os.path.join(self._sdir, 'struct', gmx_args['-o']))
-			self._gmx_args['topfname'] =  os.path.abspath(os.path.join(self._sdir, 'top', gmx_args['-o']))
-			self._gmx_args['posrename'] =  os.path.abspath(os.path.join(self._sdir, 'top', gmx_args['-o']))
+			self._gmx_args['topfname'] =  os.path.abspath(os.path.join(self._sdir, 'top', gmx_args['-p']))
+			self._gmx_args['posrename'] =  os.path.abspath(os.path.join(self._sdir, 'top', gmx_args['-i']))
 
 	def editconf(self):
 		with Workunit(keep=False) as Editconf:
-			gmx_args = OrderedDict()
 
+			gmx_args = OrderedDict()
 			gmx_args['_exec'] = self._gmx_args['_exec']
 			gmx_args['_tool'] = 'editconf'
 			gmx_args['-f'] = self._gmx_args['ifname']
 			gmx_args['-o'] = self._gmx_args['ofname']
+			gmx_args['-c'] = ' '
+			gmx_args['-box'] = ('{} ' * len(self._Box.bound)).format(*self._Box.bound)
 
-			args = self._dict_to_flist(**gmx_args)
-			args.append('-c')
-			args.append('-box')
-			for dim in self._Box.bound: args.append(f'{dim}')
-
+			args = self._dict_to_str(**gmx_args)
 			print(args)
 
 			Editconf.run(cmd=args)
@@ -72,7 +70,29 @@ class Gmx(Engine):
 
 			self._gmx_args['ifname'] = os.path.abspath(os.path.join(self._sdir, 'struct', gmx_args['-o']))
 
+	def solvate(self):
+		with Workunit(keep=False) as Solvate:
+
+			gmx_args = OrderedDict()
+			gmx_args['_exec'] = self._gmx_args['_exec']
+			gmx_args['_tool'] = 'solvate'
+			gmx_args['-cp'] = self._gmx_args['ifname']
+			gmx_args['-cs'] = 'spc216'
+			gmx_args['-p'] = self._gmx_args['topfname']
+			gmx_args['-o'] = self._gmx_args['ofname']
+
+			args = self._dict_to_str(**gmx_args)
+			print(args)
+
+			Solvate.run(cmd=args, input='SOL')
+			Solvate.store(sdir=self._sdir, struct=gmx_args['-o'], top=gmx_args['-p'])
+
+			self._gmx_args['ifname'] =  os.path.abspath(os.path.join(self._sdir, 'struct', gmx_args['-o']))
+			self._gmx_args['topfname'] =  os.path.abspath(os.path.join(self._sdir, 'top', gmx_args['-p']))
+			self._gmx_args['posrename'] =  os.path.abspath(os.path.join(self._sdir, 'top'))
+
 if __name__ == '__main__':
 	Test = Gmx(pdbID='1LFH', box=(9.5, 9, 7))
 	Test.pdb2gmx()
 	Test.editconf()
+	Test.solvate()

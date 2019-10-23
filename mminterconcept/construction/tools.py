@@ -18,15 +18,15 @@ class RandString:
 
 class ImportPDB:
 
-        def __init__(self, pdbID):
-                self.fname = RandString.name() + '.pdb'
-                self.pdbID = pdbID
+	def __init__(self, pdbID):
+		self._fname = RandString.name() + '.pdb'
+		self._pdbID = pdbID
 
-        def __enter__(self):
-                with open(self.fname,'w') as fp:
-                        fp.write(pypdb.get_pdb_file(self.pdbID))
+	def __enter__(self) -> mdtraj.Trajectory:
+		with open(self._fname,'w') as fp:
+			fp.write(pypdb.get_pdb_file(self._pdbID))
 
-                return mdtraj.load(self.fname)
+		return mdtraj.load(self._fname)
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
-                os.remove(self.fname)
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		os.remove(self._fname)

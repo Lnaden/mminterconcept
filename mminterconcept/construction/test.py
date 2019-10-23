@@ -7,16 +7,14 @@ Testing script (eventually will be deleted)
 
 import sys
 from tools import ImportPDB
-import system
+import core
 
 def run(pdbID):
 	with ImportPDB(pdbID) as Spec:
-        	species = Spec
+        	Species = Spec
 
-	print(species.xyz)
-
-	box = system.Box(bound = ( (0,1),(0,1),(0,1) ))
-	print(box.shape, box.bound)
+	Box = core.Box(bound = ( (0,1),(0,1),(0,1) ))
+	Sys = core.System(Box=Box, Species=Species)
 
 if __name__ == '__main__':
 	try:

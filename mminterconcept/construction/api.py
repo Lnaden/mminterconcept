@@ -26,6 +26,11 @@ class Engine:
 			os.mkdir(self._fdir)
 			os.chdir(self._fdir)
 
+		if 'sdir' in args:
+			self._sdir = sdir
+		else:
+			self._sdir = '..'
+
 		self._pdbID = pdbID
 
 		# dict not always ordered (depends on python ver)
@@ -43,7 +48,13 @@ class Engine:
 		if not os.path.exists('top'):
 			os.mkdir('mdp')
 
-class Unit:
+	def _dict_to_flist(self, **args) -> list:
+		""" Map dict to flattened list """
+		args = [[key, val] for key, val in args.items()]
+		args = [single for pair in args for single in pair]
+		return [arg for arg in args if not arg.startswith('_')]
+
+class Workunit:
 	def __init__(self, keep=False, fdir=None):
 		self._keep = keep
 		if fdir:
@@ -110,4 +121,4 @@ class Unit:
 	def clean(self):
 		if not self._keep:
 			if os.path.isdir(self._fdir):
-				os.rmdir(self._fdir)
+				shutil.rmtree(self._fdir, ignore_errors=True)

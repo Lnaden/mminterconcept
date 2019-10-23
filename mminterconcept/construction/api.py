@@ -7,10 +7,22 @@ Generic API for MD solvers (e.g. Gromacs)
 
 import subprocess
 from tools import RandString, ImportPDB
+from core import Box
 from collections import OrderedDict
 import os, sys
 import errno
-import shutil
+import shutil, shlex
+import six
+
+class PopenWithInput(subprocess.Popen):
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+	def communicate(self, input=None):
+		if input:
+			return super().communicate(input)
+		else:
+			return super().communicate()
 
 class Engine:
 	def __init__(self, pdbID : str, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, **args):
@@ -31,6 +43,11 @@ class Engine:
 		else:
 			self._sdir = '..'
 
+		if 'box' not in args:
+			self._Box = Box(shape='cubic', bound=(10.0, 10.0, 10.0)) # need to fill this from pdb file
+		else:
+			self._Box = Box(shape='cubic', bound=args['box'])
+
 		self._pdbID = pdbID
 
 		# dict not always ordered (depends on python ver)
@@ -48,11 +65,11 @@ class Engine:
 		if not os.path.exists('top'):
 			os.mkdir('mdp')
 
-	def _dict_to_flist(self, **args) -> list:
+	def _dict_to_str(self, **args):
 		""" Map dict to flattened list """
 		args = [[key, val] for key, val in args.items()]
 		args = [single for pair in args for single in pair]
-		return [arg for arg in args if not arg.startswith('_')]
+		return ' '.join([arg for arg in args if not arg.startswith('_')])
 
 class Workunit:
 	def __init__(self, keep=False, fdir=None):
@@ -71,15 +88,15 @@ class Workunit:
 
 		return self
 
-	def run(self, cmd, wait=False):
+	def run(self, cmd: str, wait=False, input=None):
 		try:
-			if (wait):
-				proc = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-				proc.wait()
-			else:
-				proc = subprocess.Popen(cmd, stdin = None, stdout = None, stderr = None, close_fds = True)
+			cmd = shlex.split(cmd)
+			proc = PopenWithInput(cmd)
 
-			(result, error) = proc.communicate()
+			if (wait):
+				proc.wait()
+
+			(result, error) = proc.communicate(input=input)
 
 		except subprocess.CalledProcessError as err:
 			sys.stderr.write(f'run : [ERROR]: output = {err.output}, error code = {err.returncode}')
@@ -122,3 +139,53 @@ class Workunit:
 		if not self._keep:
 			if os.path.isdir(self._fdir):
 				shutil.rmtree(self._fdir, ignore_errors=True)
+
+	def Popen(self, *args, **kwargs):
+		"""Returns a special Popen instance (:class:`PopenWithInput`). """
+
+		stderr = kwargs.pop('stderr', None)     # default: print to stderr (if STDOUT then merge)
+
+		if stderr is False:                     # False: capture it
+			stderr = PIPE
+		elif stderr is True:
+			stderr = None                       # use stderr
+
+		stdout = kwargs.pop('stdout', None)     # either set to PIPE for capturing output
+
+		if stdout is False:                     # ... or to False
+			stdout = PIPE
+		elif stdout is True:
+			stdout = None                       # for consistency, make True write to screen
+
+		stdin = kwargs.pop('stdin', None)
+		input = kwargs.pop('input', None)
+
+		use_shell = kwargs.pop('use_shell', False)
+
+		if input:
+			stdin = PIPE
+		if isinstance(input, six.string_types) and not input.endswith('\n'):
+			# make sure that input is a simple string with \n line endings
+			input = six.text_type(input) + '\n'
+		else:
+			try:
+				# make sure that input is a simple string with \n line endings
+				input = '\n'.join(map(six.text_type, input)) + '\n'
+			except TypeError:
+				# so maybe we are a file or something ... and hope for the best
+				pass
+
+		cmd = self._commandline(*args, **kwargs)   # lots of magic happening here
+				# (cannot move out of method because filtering of stdin etc)
+		try:
+			proc = PopenWithInput(cmd, stdin=stdin, stderr=stderr, stdout=stdout,
+				universal_newlines=True, input=input, shell=use_shell)
+		except: raise
+
+		if err.errno == errno.ENOENT:
+			errmsg = "Failed to find Gromacs command {0!r}, maybe its not on PATH or GMXRC must be sourced?".format(self.command_name)
+			raise OSError(errmsg)
+		else:
+			raise
+
+		return proc

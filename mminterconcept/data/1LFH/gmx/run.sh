@@ -7,7 +7,7 @@ rm $DIR/struct/*.gro
 rm $DIR/top/*
 
 # Convert pdb to gro using amber99 FF for 1LFH and TIP3P FF for water
-gmx pdb2gmx -f $DIR/struct/1LFH.pdb -ff amber99 -water tip3p -o $DIR/struct/protein.gro -p $DIR/top/topol.top -i $DIR/top/posre.itp
+gmx pdb2gmx -f ../1LFH.pdb -ff amber99 -water tip3p -o $DIR/struct/protein.gro -p $DIR/top/topol.top -i $DIR/top/posre.itp
 
 # Center protein in simulation box of size (7,7,7)nm
 gmx editconf -f $DIR/struct/protein.gro -c -o $DIR/struct/protein.gro -box 9.5 9 7

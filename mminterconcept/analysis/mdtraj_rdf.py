@@ -1,5 +1,5 @@
 '''
-This module provides access to the MDTraj rdf function using a trajectory filepath.
+This module provides access to the MDTraj rdf function using a MDTraj Trajectory.
 '''
 
 from models import Component
@@ -22,16 +22,18 @@ class RDFComponent(Component):
     '''
     trajectory: mdtraj.Trajectory
     
-    def __init__(self, trajectory_file: str):
-        self.trajectory = self.process_input(trajectory_file)
+    def __init__(self, trajectory: mdtraj.Trajectory):
+        #self.trajectory = self.process_input(trajectory_file)
+        self.trajectory = trajectory
     
-    def process_input(self, trajectory_file: str) -> mdtraj.Trajectory:
-        return mdtraj.load_pdb(trajectory_file)
+    def process_input(self, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
+        #return mdtraj.load_pdb(trajectory_file)
+        return trajectory
         
     def compute(self):
         pairs = self.trajectory.top.select_pairs('all', 'all')
         return mdtraj.compute_rdf(self.trajectory, pairs)
         
-    def run(self):
-        self.process_input(trajectory_file)
+    def run(self, trajectory: mdtraj.Trajectory):
+        self.process_input(trajectory)
         return self.compute()

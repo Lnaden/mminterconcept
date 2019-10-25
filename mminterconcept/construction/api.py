@@ -13,6 +13,7 @@ import os, sys
 import errno
 import shutil, shlex
 import six
+import mdtraj
 
 class PopenWithInput(subprocess.Popen):
 	def __init__(self, *args, **kwargs):
@@ -45,6 +46,7 @@ class Engine:
 
 		self._args = {
 			'_exec': exec,
+			'_system': None,
 			'ifname': os.path.abspath(f'{pdbID}.{ext}'),
 			'ff_solute': ff_solute,
 			'ff_solvent': ff_solvent,
@@ -87,6 +89,9 @@ class Engine:
 		args = [[key, val] for key, val in args.items()]
 		args = [single for pair in args for single in pair]
 		return ' '.join([arg for arg in args if not arg.startswith('_')])
+
+	def load(self) -> mdtraj.Trajectory:
+		return mdtraj.load(self._args['_system'])
 
 class Workunit:
 	def __init__(self, keep=False, fdir=None, mod=None):

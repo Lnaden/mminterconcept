@@ -20,7 +20,7 @@ class PopenWithInput(subprocess.Popen):
 
 	def communicate(self, input=None):
 		if input:
-			return super().communicate(input)
+			return super().communicate(input.encode('utf-8'))
 		else:
 			return super().communicate()
 
@@ -112,7 +112,7 @@ class Workunit:
 	def run(self, cmd: str, wait=False, input=None):
 		try:
 			cmd = shlex.split(cmd)
-			proc = PopenWithInput(cmd)
+			proc = PopenWithInput(cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 			if (wait):
 				proc.wait()
@@ -144,7 +144,6 @@ class Workunit:
 							else:
 								files[fdir] = os.path.join(sdir, fdir, sfile)
 						else:
-							print(sdir, fdir)
 							raise
 
 				elif isinstance(sfile, list):

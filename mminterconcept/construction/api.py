@@ -60,7 +60,7 @@ class Engine:
 			self._sdir = '..'
 
 		if 'box' not in args:
-			self._Box = Box(shape='cubic', bound=(10.0, 10.0, 10.0)) # need to fill this from pdb file
+			self._Box = Box(shape='cubic', bound=(10.0, 10.0, 10.0)) # we could estimate box lengths from protein size
 		else:
 			self._Box = Box(shape='cubic', bound=args['box'])
 

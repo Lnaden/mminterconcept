@@ -25,18 +25,32 @@ class PopenWithInput(subprocess.Popen):
 			return super().communicate()
 
 class Engine:
-	def __init__(self, pdbID : str, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, **args):
+	def __init__(self, pdbID : str, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, exec: str, **args):
 
 		if 'fdir' in args:
 			self._fdir = args['fdir']
 		else:
-			self._fdir = 'GMX_' + RandString.name()
+			self._fdir = RandString.name()
+
+		if 'mod' not in args:
+			self._mod = 0o777
 
 		if os.path.isdir(self._fdir):
 			raise Exception(f'__enter__ : [ERROR]: randrom dir {self._fdir} already exists')
 		else:
 			os.mkdir(self._fdir)
-			os.chdir(self._fdir)
+			os.chmod(self._fdir, self._mod)
+
+		os.chdir(self._fdir)
+
+		self._args = {
+			'_exec': exec,
+			'ifname': os.path.abspath(f'{pdbID}.{ext}'),
+			'ff_solute': ff_solute,
+			'ff_solvent': ff_solvent,
+			'ofname': ofname,
+			'topfname': topfname
+		}
 
 		if 'sdir' in args:
 			self._sdir = sdir
@@ -58,12 +72,15 @@ class Engine:
 
 		if not os.path.exists('struct'):
 			os.mkdir('struct')
+			os.chmod('struct', self._mod)
 
 		if not os.path.exists('top'):
 			os.mkdir('top')
+			os.chmod('top', self._mod)
 
-		if not os.path.exists('top'):
-			os.mkdir('mdp')
+		if not os.path.exists('tpr'):
+			os.mkdir('tpr')
+			os.chmod('tpr', self._mod)
 
 	def _dict_to_str(self, **args):
 		""" Map dict to flattened list """
@@ -72,18 +89,22 @@ class Engine:
 		return ' '.join([arg for arg in args if not arg.startswith('_')])
 
 class Workunit:
-	def __init__(self, keep=False, fdir=None):
+	def __init__(self, keep=False, fdir=None, mod=None):
 		self._keep = keep
 		if fdir:
 			self._fdir = fdir
 		else:
 			self._fdir = 'Unit_' + RandString.name()
 
+		if not mod:
+			self._mod = 0o777
+
 	def __enter__(self):
 		if os.path.isdir(self._fdir):
 			raise Exception(f'__enter__ : [ERROR]: randrom dir {self._fdir} already exists')
 		else:
 			os.mkdir(self._fdir)
+			os.chmod(self._fdir, self._mod)
 			os.chdir(self._fdir)
 
 		return self
@@ -112,19 +133,26 @@ class Workunit:
 			for fdir, sfile in files.items():
 				if not os.path.exists(fdir):
 					os.mkdir(fdir)
+					os.chmod(fdir, self._mod)
 
 				if isinstance(sfile, str):
 					if(os.path.isfile(sfile)):
 						if os.path.exists(os.path.join(sdir, fdir)):
 							shutil.move(sfile, os.path.join(sdir, fdir, sfile))
+							if files[fdir] == sfile and sfile.startswith('..'): # very hackish!
+								pass
+							else:
+								files[fdir] = os.path.join(sdir, fdir, sfile)
 						else:
-							raise 
+							print(sdir, fdir)
+							raise
 
 				elif isinstance(sfile, list):
 					for ssfile in sfile:
 						if(os.path.isfile(ssfile)):
 							if os.path.exists(os.path.join(sdir, fdir)):
 								shutil.move(ssfile, os.path.join(sdir, fdir, ssfile))
+								files[fdir][sfile.index(ssfile)] = os.path.join(sdir, fdir, ssfile)
 							else:
 								raise
 						else:
@@ -134,6 +162,8 @@ class Workunit:
 
 		except Exception:
 			raise
+
+		return files
 
 	def clean(self):
 		if not self._keep:

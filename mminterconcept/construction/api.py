@@ -73,8 +73,8 @@ class Engine:
 			SS.save(f'{pdbID}.{ext}')
 
 		# create new dirs if requested
-		if 'static_dirs' in args:
-			for path in args['static_dirs']:
+		if '_static_dirs' in args:
+			for path in args['_static_dirs']:
 				if not os.path.exists(path):
 					os.mkdir('struct')
 					os.chmod('struct', self._mod)

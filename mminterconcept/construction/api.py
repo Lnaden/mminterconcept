@@ -26,7 +26,11 @@ class PopenWithInput(subprocess.Popen):
 			return super().communicate()
 
 class Engine:
-	def __init__(self, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, exec: str,**args):
+
+	def _abspath(self, *args) -> str:
+		return os.path.abspath(os.path.join(self._adir, *args))
+
+	def __init__(self, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, exec: str, **args):
 
 		if 'wdir' in args:
 			os.chdir(args['wdir'])
@@ -39,13 +43,12 @@ class Engine:
 		if 'mod' not in args:
 			self._mod = 0o777
 
-		if os.path.isdir(self._fdir):
-			raise Exception(f'__enter__ : [ERROR]: randrom dir {self._fdir} already exists')
-		else:
-			os.mkdir(self._fdir)
-			os.chmod(self._fdir, self._mod)
+		os.makedirs(self._fdir, exist_ok=True)
+		os.chmod(self._fdir, self._mod)
 
-		os.chdir(self._fdir)
+		self._adir = os.path.abspath(self._fdir)
+
+		# os.chdir(self._fdir)
 
 		self._args = {
 			'_exec': exec,
@@ -57,12 +60,12 @@ class Engine:
 		}
 
 		if 'sdir' in args:
-			self._sdir = sdir
+			self._sdir = args["sdir"]
 		else:
 			self._sdir = '..'
 
 		if 'box' not in args:
-			self._Box = Box(shape='cubic', bound=(10.0, 10.0, 10.0)) # we could estimate box lengths from protein size
+			self._Box = Box(shape='cubic', bound=(10.0, 10.0, 10.0))  # we could estimate box lengths from protein size
 		else:
 			self._Box = Box(shape='cubic', bound=args['box'])
 
@@ -70,15 +73,15 @@ class Engine:
 			with ImportPDB(args['pdbID']) as SS:
 				# clean system of any water molecules
 				drySS = self.getSystemDry(SS)
-				drySS.save(f'{args["pdbID"]}.{ext}')
+				drySS.save(self._abspath(f'{args["pdbID"]}.{ext}'))
 
-			self._args['ifname'] = os.path.abspath(f'{args["pdbID"]}.{ext}')
+			self._args['ifname'] = self._abspath(f'{args["pdbID"]}.{ext}')
 
 		else:
 			if 'System' in args:
-				args['System'].save(f'System.{ext}')
+				args['System'].save(self._abspath(f'System.{ext}'))
 
-				self._args['ifname'] = os.path.abspath(f'{System}.{ext}')
+				self._args['ifname'] = self._abspath(f'{args["System"]}.{ext}')
 			else:
 				raise ValueError('pdbID or system keywords must be supplied')
 
@@ -86,6 +89,7 @@ class Engine:
 		# create new dirs if requested
 		if '_static_dirs' in args:
 			for path in args['_static_dirs']:
+				path = self._abspath(path)
 				if not os.path.exists(path):
 					os.mkdir(path)
 					os.chmod(path, self._mod)
@@ -97,7 +101,7 @@ class Engine:
 		return ' '.join([arg for arg in args if not arg.startswith('_')])
 
 	def getSystem(self) -> mdtraj.Trajectory:
-		return mdtraj.load(self._args['_system'])
+		return mdtraj.load(self._abspath(self._args['_system']))
 
 	def getSystemDry(self, System: mdtraj.Trajectory=None) -> mdtraj.Trajectory:
 		sel = 'protein' #'not resname HOH and not resname SOL'
@@ -105,7 +109,7 @@ class Engine:
 		if System:
 			return System.atom_slice(System.topology.select(sel))
 		else:
-			System = mdtraj.load(self._args['_system'])
+			System = mdtraj.load(self._abspath(self._args['_system']))
 			return System.atom_slice(System.topology.select(sel))
 
 class Workunit:

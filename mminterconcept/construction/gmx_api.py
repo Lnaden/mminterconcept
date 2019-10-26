@@ -10,6 +10,7 @@ from collections import OrderedDict
 from tools import RandString
 import os
 
+
 class Gmx(Engine):
 
 	def __init__(self, ff_solute='amber99', ff_solvent='tip3p', topfname='topol.top',
@@ -47,7 +48,7 @@ class Gmx(Engine):
 			elif key == 'tpr':
 				self._args['tprfname'] = rargs[key]
 
-			self._args['_system'] = os.path.abspath(self._args['ifname'])
+			self._args['_system'] = self._abspath(self._args['ifname'])
 
 	def genTop(self):
 		with Workunit(keep=self._keep) as Pdb2gmx:
@@ -66,7 +67,7 @@ class Gmx(Engine):
 			args = self._dict_to_str(**gmx_args)
 
 			Pdb2gmx.run(cmd=args)
-			rargs = Pdb2gmx.store(sdir=self._sdir, struct=gmx_args['-o'], top=[gmx_args['-p'], gmx_args['-i']])
+			rargs = Pdb2gmx.store(sdir=self._abspath(), struct=gmx_args['-o'], top=[gmx_args['-p'], gmx_args['-i']])
 
 			self._updateArgs(**rargs)
 
@@ -86,7 +87,7 @@ class Gmx(Engine):
 			args = self._dict_to_str(**gmx_args)
 
 			Editconf.run(cmd=args)
-			rargs = Editconf.store(sdir=self._sdir, struct=gmx_args['-o'])
+			rargs = Editconf.store(sdir=self._abspath(), struct=gmx_args['-o'])
 
 			self._updateArgs(**rargs)
 
@@ -104,7 +105,7 @@ class Gmx(Engine):
 			args = self._dict_to_str(**gmx_args)
 
 			Solvate.run(cmd=args)
-			rargs = Solvate.store(sdir=self._sdir, struct=gmx_args['-o'], top=gmx_args['-p'])
+			rargs = Solvate.store(sdir=self._abspath(), struct=gmx_args['-o'], top=gmx_args['-p'])
 
 			self._updateArgs(**rargs)
 
@@ -123,7 +124,7 @@ class Gmx(Engine):
 
 			args = self._dict_to_str(**gmx_args)
 			Grompp.run(cmd=args)
-			rargs = Grompp.store(sdir=self._sdir, tpr=gmx_args['-o'], top=gmx_args['-pp'])
+			rargs = Grompp.store(sdir=self._abspath(), tpr=gmx_args['-o'], top=gmx_args['-pp'])
 
 			self._updateArgs(**rargs)
 
@@ -141,6 +142,11 @@ class Gmx(Engine):
 
 			args = self._dict_to_str(**gmx_args)
 			GenIons.run(cmd=args, input=replace)
-			rargs = GenIons.store(sdir=self._sdir, struct=gmx_args['-o'], top=gmx_args['-p'])
+			rargs = GenIons.store(sdir=self._abspath(), struct=gmx_args['-o'], top=gmx_args['-p'])
 
 			self._updateArgs(**rargs)
+
+	def getTop(self) -> str:
+		with open(self._abspath(self._args['topfname']), 'r') as f:
+			top = f.read()
+		return top

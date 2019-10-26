@@ -17,9 +17,14 @@ class Gmx(Engine):
 			exec='gmx', **args):
 
 		args['fdir'] = 'GMX_' + RandString.name()
+		
+		# Gonna save structure, top, and tpr files in each work unit
+		args['_static_dirs'] = ('struct', 'top', 'tpr')
+		
 		super().__init__(pdbID=pdbID, ff_solute=ff_solute, ff_solvent=ff_solvent, topfname=topfname, 
 				ofname=ofname, ext=ext, exec=exec, **args)
 
+		# Position restraints and tpr files are gromacs-specific
 		self._args['posrename'] = posrename
 		self._args['tprfname'] = tprfname
 
@@ -33,8 +38,7 @@ class Gmx(Engine):
 				self._args['ifname'] = rargs[key]
 			elif key == 'top':
 				if isinstance(rargs['top'], list):
-					self._args['topfname'] = rargs[key][0]
-					self._args['posrename'] = rargs[key][1]
+					self._args['topfname'], self._args['posrename'] = rargs[key]
 				else:
 					self._args['topfname'] = rargs[key]
 			elif key == 'tpr':

@@ -12,16 +12,19 @@ import os
 
 class Gmx(Engine):
 
-	def __init__(self, pdbID : str, ff_solute='amber99', ff_solvent='tip3p', topfname='topol.top',
-			tprfname='topol.tpr', posrename='posre.itp', ofname='system.gro', ext='gro', 
-			exec='gmx', **args):
+	def __init__(self, ff_solute='amber99', ff_solvent='tip3p', topfname='topol.top',
+			tprfname='topol.tpr', posrename='posre.itp', ofname='system.gro', 
+			ext='gro', exec='gmx', **args):
 
-		args['fdir'] = 'GMX_' + RandString.name()
-		
+		if 'fdir' not in args:
+			args['fdir'] = 'GMX_' + RandString.name()
+		else:
+			args['fdir'] = 'GMX_' + args['fdir']
+
 		# Gonna save structure, top, and tpr files in each work unit
 		args['_static_dirs'] = ('struct', 'top', 'tpr')
 		
-		super().__init__(pdbID=pdbID, ff_solute=ff_solute, ff_solvent=ff_solvent, topfname=topfname, 
+		super().__init__(ff_solute=ff_solute, ff_solvent=ff_solvent, topfname=topfname, 
 				ofname=ofname, ext=ext, exec=exec, **args)
 
 		# Position restraints and tpr files are gromacs-specific
@@ -105,7 +108,7 @@ class Gmx(Engine):
 
 			self._updateArgs(**rargs)
 
-	def genConfig(self, mdpfile, maxwarn=0):
+	def genConfig(self, mdpfile, maxwarn=1):
 		with Workunit(keep=self._keep) as Grompp:
 
 			gmx_args = OrderedDict()

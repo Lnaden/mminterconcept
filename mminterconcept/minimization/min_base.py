@@ -1,9 +1,23 @@
 from abc import ABC, abstractmethod
 import mdtraj
-from pydantic import BaseModel
-from typing import Dict, Any, Union
+from pydantic import BaseModel, validator
+from typing import Dict, Any
 
 from qcelemental.models.types import Array
+from qcengine.util import temporary_directory
+from simtk.openmm.app.gromacstopfile import GromacsTopFile as GroTop
+from contextlib import contextmanager
+import os
+
+@contextmanager
+def tempcd(*args, **kwargs):
+    cur = os.getcwd()
+    try:
+        with temporary_directory(*args, **kwargs) as tmpdir:
+            os.chdir(tmpdir)
+            yield
+    finally:
+        os.chdir(cur)
 
 
 class Worklet(BaseModel, ABC):
@@ -15,7 +29,8 @@ class Worklet(BaseModel, ABC):
         pass
 
     def run(self) -> Any:
-        return self._output_model(**self._run_internal())
+        output = self._output_model(**self._run_internal())
+        return [getattr(output, field) for field in output.__fields__.keys()]
 
 
 class Component:
@@ -27,32 +42,51 @@ class Component:
         model_init = self.input_model(**kwargs)
 
 
-class Topology(mdtraj.Topology):
+class Trajectory(mdtraj.Trajectory):
     @classmethod
     def __get_validators__(cls):
-        yield cls.validate_top
+        yield cls.validate_traj
 
     @classmethod
-    def validate_top(cls, v):
-        if not isinstance(v, mdtraj.Topology):
+    def validate_traj(cls, v):
+        if not isinstance(v, mdtraj.Trajectory):
             raise ValueError("Not an MDTraj Topology")
         return v
 
 
-class System(BaseModel):
-    topology: Union[Topology, str]
-    coordinates: Array[float]
-    unit_cell: Array[float] = None
+class OutputSystem(BaseModel):
 
+    @validator("topology")
+    def top_is_gro(cls, v):
+        with tempcd():
+            gro = "gro.top"
+            with open(gro, 'w') as f:
+                f.write(v)
+            try:
+                GroTop(gro)
+            except:
+                raise ValueError("Topology could not be processed, ensure its a valid gromacs topology string")
+        return v
 
-class ForceField(BaseModel):
-    everything: str = None
-    solute: str = None
-    solvent: str = None
+    trajectory: Trajectory
+    topology: str
 
 
 class Minimization(Worklet):
+
+    @validator("topology")
+    def top_is_gro(cls, v):
+        with tempcd():
+            gro = "gro.top"
+            with open(gro, 'w') as f:
+                f.write(v)
+            try:
+                GroTop(gro, includeDir="/Users/levinaden/miniconda3/envs/mminter/include/gromacs/")
+            except:
+                raise ValueError("Topology could not be processed, ensure its a valid gromacs topology string")
+        return v
+
     parameters: Dict[str, Any] = {}
-    system: System
-    forcefield: ForceField
-    _output_model = System
+    trajectory: Trajectory
+    topology: str
+    _output_model = OutputSystem

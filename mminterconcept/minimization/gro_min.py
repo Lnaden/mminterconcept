@@ -20,42 +20,37 @@ def tempcd(*args, **kwargs):
         os.chdir(cur)
 
 
-with tempcd():
-    # do stuff
-    pass
-
-
 class GroMinEQ(Minimization):
 
     _mdp = """"""
 
     def _run_internal(self) -> Dict[str, Any]:
         with temporary_directory():
-            if isinstance(self.system.topology, str):
-                gro_name = self.system.topology
-            else:
-                # Write coordinates
+            # Write coordinates
+            with tempcd():
                 gro_name = "grocoords.gro"
                 gro_file = mdtraj.formats.GroTrajectoryFile(gro_name, mode='w')
-                translated_coords = self.system.coordinates[np.newaxis, :]
-                translated_cell = self.system.unit_cell[np.newaxis, :]
-                gro_file.write(translated_coords, self.system.topology, unitcell_vectors=translated_cell, time=[0])
+                translated_coords = self.trajectory.xyz[-1][np.newaxis, :]
+                translated_cell = self.trajectory.unitcell_vectors[-1][np.newaxis, :]
+                gro_file.write(translated_coords, self.trajectory.top, unitcell_vectors=translated_cell, time=[0])
                 gro_file.close()
+                with open(gro_name, 'r') as f:
+                    gro_coords = f.read()
             topology_name = "gro.top"
-            processed_name = "groproc.gro"
-            top_proc = ["gmx", "pdb2gmx",
-                        "-f", gro_name,
-                        "-ff", self.forcefield.solute,
-                        "-water", self.forcefield.solvent,
-                        "-ignh",
-                        "-p", topology_name,
-                        "-o", processed_name]
-            with open(gro_name, 'r') as f:
-                gro_data = f.read()
-            breakpoint()
-            ret_pdb, proc_pdb = execute(top_proc,
-                                        infiles={gro_name: gro_data},
-                                        outfiles=[topology_name])
+            # processed_name = "groproc.gro"
+            # top_proc = ["gmx", "pdb2gmx",
+            #             "-f", gro_name,
+            #             "-ff", self.forcefield.solute,
+            #             "-water", self.forcefield.solvent,
+            #             "-ignh",
+            #             "-p", topology_name,
+            #             "-o", processed_name]
+            # with open(gro_name, 'r') as f:
+            #     gro_data = f.read()
+            # breakpoint()
+            # ret_pdb, proc_pdb = execute(top_proc,
+            #                             infiles={gro_name: gro_data},
+            #                             outfiles=[topology_name])
             mdp_name = "mdp.mdp"
             gmxrun_base = "gmxrun"
             grompp_tpr_name = gmxrun_base + ".tpr"
@@ -63,13 +58,13 @@ class GroMinEQ(Minimization):
                            "-f", mdp_name,
                            "-c", gro_name,
                            "-p", topology_name,
-                           "-o", grompp_tpr_name
+                           "-o", grompp_tpr_name,
+                           "-maxwarn", "1"
                            ]
-
             ret_grompp, proc_grompp = execute(grompp_proc,
                                               infiles={mdp_name: self._mdp,
-                                                       gro_name: gro_data,
-                                                       topology_name: proc_pdb['outfiles'][topology_name],
+                                                       gro_name: gro_coords,
+                                                       topology_name: self.topology,
                                                        },
                                               outfiles=[grompp_tpr_name],
                                               as_binary=[grompp_tpr_name])
@@ -78,18 +73,16 @@ class GroMinEQ(Minimization):
                           "-deffnm", gmxrun_base]
             output_traj = gmxrun_base + ".trr"
             ret, proc = execute(mdrun_proc,
-                                infiles={mdp_name: self._mdp,
-                                         gro_name: gro_data,
-                                         topology_name: proc_grompp['outfiles'][topology_name],
-                                         },
+                                infiles={grompp_tpr_name: proc_grompp['outfiles'][grompp_tpr_name]},
                                 outfiles=[output_traj],
-                                as_binary=[output_traj])
+                                as_binary=[grompp_tpr_name, output_traj])
 
-            final_topology = self.system.topology
-            final_traj = mdtraj.load(output_traj, top=self.system.topology)
-            final_coords = final_traj.xyz[-1]
-            final_unitcell = final_traj.unitcell_vectors
-            return {"topology": final_topology, "coordinates": final_coords, "unit_cell": final_unitcell}
+            final_topology = self.topology
+            with tempcd():
+                with open(output_traj, 'wb') as f:
+                    f.write(proc['outfiles'][output_traj])
+                final_traj = mdtraj.load(output_traj, top=self.trajectory.topology)
+            return {"trajectory": final_traj, "topology": final_topology}
 
 
 class GroSD(GroMinEQ):

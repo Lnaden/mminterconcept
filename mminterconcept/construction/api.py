@@ -72,20 +72,15 @@ class Engine:
 		with ImportPDB(self._pdbID) as SS:
 			SS.save(f'{pdbID}.{ext}')
 
-		if not os.path.exists('struct'):
-			os.mkdir('struct')
-			os.chmod('struct', self._mod)
-
-		if not os.path.exists('top'):
-			os.mkdir('top')
-			os.chmod('top', self._mod)
-
-		if not os.path.exists('tpr'):
-			os.mkdir('tpr')
-			os.chmod('tpr', self._mod)
+		# create new dirs if requested
+		if 'static_dirs' in args:
+			for path in args['static_dirs']:
+				if not os.path.exists(path):
+					os.mkdir('struct')
+					os.chmod('struct', self._mod)
 
 	def _dict_to_str(self, **args):
-		""" Map dict to flattened list """
+		""" Map dict to flattened str """
 		args = [[key, val] for key, val in args.items()]
 		args = [single for pair in args for single in pair]
 		return ' '.join([arg for arg in args if not arg.startswith('_')])
@@ -173,53 +168,3 @@ class Workunit:
 		if not self._keep:
 			if os.path.isdir(self._fdir):
 				shutil.rmtree(self._fdir, ignore_errors=True)
-
-	def Popen(self, *args, **kwargs):
-		"""Returns a special Popen instance (:class:`PopenWithInput`). """
-
-		stderr = kwargs.pop('stderr', None)     # default: print to stderr (if STDOUT then merge)
-
-		if stderr is False:                     # False: capture it
-			stderr = PIPE
-		elif stderr is True:
-			stderr = None                       # use stderr
-
-		stdout = kwargs.pop('stdout', None)     # either set to PIPE for capturing output
-
-		if stdout is False:                     # ... or to False
-			stdout = PIPE
-		elif stdout is True:
-			stdout = None                       # for consistency, make True write to screen
-
-		stdin = kwargs.pop('stdin', None)
-		input = kwargs.pop('input', None)
-
-		use_shell = kwargs.pop('use_shell', False)
-
-		if input:
-			stdin = PIPE
-		if isinstance(input, six.string_types) and not input.endswith('\n'):
-			# make sure that input is a simple string with \n line endings
-			input = six.text_type(input) + '\n'
-		else:
-			try:
-				# make sure that input is a simple string with \n line endings
-				input = '\n'.join(map(six.text_type, input)) + '\n'
-			except TypeError:
-				# so maybe we are a file or something ... and hope for the best
-				pass
-
-		cmd = self._commandline(*args, **kwargs)   # lots of magic happening here
-				# (cannot move out of method because filtering of stdin etc)
-		try:
-			proc = PopenWithInput(cmd, stdin=stdin, stderr=stderr, stdout=stdout,
-				universal_newlines=True, input=input, shell=use_shell)
-		except: raise
-
-		if err.errno == errno.ENOENT:
-			errmsg = "Failed to find Gromacs command {0!r}, maybe its not on PATH or GMXRC must be sourced?".format(self.command_name)
-			raise OSError(errmsg)
-		else:
-			raise
-
-		return proc

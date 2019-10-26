@@ -26,7 +26,10 @@ class PopenWithInput(subprocess.Popen):
 			return super().communicate()
 
 class Engine:
-	def __init__(self, pdbID : str, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, exec: str, **args):
+	def __init__(self, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, exec: str,**args):
+
+		if 'wdir' in args:
+			os.chdir(args['wdir'])
 
 		if 'fdir' in args:
 			self._fdir = args['fdir']
@@ -47,7 +50,6 @@ class Engine:
 		self._args = {
 			'_exec': exec,
 			'_system': None,
-			'ifname': os.path.abspath(f'{pdbID}.{ext}'),
 			'ff_solute': ff_solute,
 			'ff_solvent': ff_solvent,
 			'ofname': ofname,
@@ -64,20 +66,29 @@ class Engine:
 		else:
 			self._Box = Box(shape='cubic', bound=args['box'])
 
-		self._pdbID = pdbID
+		if 'pdbID' in args:
+			with ImportPDB(args['pdbID']) as SS:
+				# clean system of any water molecules
+				drySS = self.getSystemDry(SS)
+				drySS.save(f'{args["pdbID"]}.{ext}')
 
-		# dict not always ordered (depends on python ver)
-		self._gmx_args = OrderedDict()
+			self._args['ifname'] = os.path.abspath(f'{args["pdbID"]}.{ext}')
 
-		with ImportPDB(self._pdbID) as SS:
-			SS.save(f'{pdbID}.{ext}')
+		else:
+			if 'System' in args:
+				args['System'].save(f'System.{ext}')
+
+				self._args['ifname'] = os.path.abspath(f'{System}.{ext}')
+			else:
+				raise ValueError('pdbID or system keywords must be supplied')
+
 
 		# create new dirs if requested
 		if '_static_dirs' in args:
 			for path in args['_static_dirs']:
 				if not os.path.exists(path):
-					os.mkdir('struct')
-					os.chmod('struct', self._mod)
+					os.mkdir(path)
+					os.chmod(path, self._mod)
 
 	def _dict_to_str(self, **args):
 		""" Map dict to flattened str """
@@ -85,8 +96,17 @@ class Engine:
 		args = [single for pair in args for single in pair]
 		return ' '.join([arg for arg in args if not arg.startswith('_')])
 
-	def load(self) -> mdtraj.Trajectory:
+	def getSystem(self) -> mdtraj.Trajectory:
 		return mdtraj.load(self._args['_system'])
+
+	def getSystemDry(self, System: mdtraj.Trajectory=None) -> mdtraj.Trajectory:
+		sel = 'protein' #'not resname HOH and not resname SOL'
+
+		if System:
+			return System.atom_slice(System.topology.select(sel))
+		else:
+			System = mdtraj.load(self._args['_system'])
+			return System.atom_slice(System.topology.select(sel))
 
 class Workunit:
 	def __init__(self, keep=False, fdir=None, mod=None):

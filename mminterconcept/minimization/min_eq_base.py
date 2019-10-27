@@ -33,15 +33,6 @@ class Worklet(BaseModel, ABC):
         return [getattr(output, field) for field in output.__fields__.keys()]
 
 
-class Component:
-    def __init__(self, input_model, output_model):
-        self.input_model = input_model
-        self.output_model = output_model
-
-    def __call__(self, **kwargs):
-        model_init = self.input_model(**kwargs)
-
-
 class Trajectory(mdtraj.Trajectory):
     @classmethod
     def __get_validators__(cls):
@@ -63,7 +54,7 @@ class OutputSystem(BaseModel):
             with open(gro, 'w') as f:
                 f.write(v)
             try:
-                GroTop(gro)
+                GroTop(gro, includeDir="/Users/levinaden/miniconda3/envs/mminter/include/gromacs/")
             except:
                 raise ValueError("Topology could not be processed, ensure its a valid gromacs topology string")
         return v
@@ -72,7 +63,7 @@ class OutputSystem(BaseModel):
     topology: str
 
 
-class Minimization(Worklet):
+class MinimizationEquilibration(Worklet):
 
     @validator("topology")
     def top_is_gro(cls, v):

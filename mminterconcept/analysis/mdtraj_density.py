@@ -29,6 +29,8 @@ class DensityComponent(Component):
         
     def compute(self):
         return mdtraj.density(self.trajectory)
+        # return sum(atom.element.mass for atom in self.trajectory.top.atoms)
+        # return self.trajectory.unitcell_volumes
         
     def run(self, trajectory: mdtraj.Trajectory):
         self.process_input(trajectory)

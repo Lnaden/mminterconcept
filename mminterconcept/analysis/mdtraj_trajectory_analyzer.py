@@ -1,9 +1,9 @@
 from mminterconcept.analysis import mdtraj_com, mdtraj_rog, mdtraj_rmsd, mdtraj_rdf, mdtraj_density
 import mdtraj
 
-from models import Component
+from .models import TrajectoryAnalyzerComponent
 
-class MDTrajTrajectoryComponent(Component):
+class MDTrajTrajectoryComponent(TrajectoryAnalyzerComponent):
     trajectory: mdtraj.Trajectory
     
     def __init__(self, trajectory: mdtraj.Trajectory=None):

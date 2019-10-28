@@ -5,10 +5,10 @@ DOC: Oct 23, 2019
 GMX (Gromacs) API  for setting up an MD simulation
 '''
 
-from api import Workunit, Engine
 from collections import OrderedDict
-from tools import RandString
-import os
+from .api import Workunit, Engine
+from .tools import RandString
+
 
 
 class Gmx(Engine):

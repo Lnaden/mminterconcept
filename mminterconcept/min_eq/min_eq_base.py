@@ -3,7 +3,6 @@ import mdtraj
 from pydantic import BaseModel, validator
 from typing import Dict, Any
 
-from qcelemental.models.types import Array
 from qcengine.util import temporary_directory
 from simtk.openmm.app.gromacstopfile import GromacsTopFile as GroTop
 from contextlib import contextmanager

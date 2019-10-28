@@ -4,9 +4,8 @@ import mdtraj
 
 from .models import TrajectoryAnalyzerComponent
 
-from contextlib import contextmanager
-import os
 from tempfile import TemporaryDirectory
+
 
 class MDAnalysisTrajectoryComponent(TrajectoryAnalyzerComponent):
     trajectory: mdtraj.Trajectory

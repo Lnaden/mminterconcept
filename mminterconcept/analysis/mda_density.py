@@ -2,15 +2,14 @@
 This module provides access to the a mass density in MDAnalysis using a MDTraj Trajectory.
 '''
 
-from models import Component
+from .models import Component
 import numpy
 import mdtraj
 import MDAnalysis
 
-from contextlib import contextmanager
-import os
 from tempfile import TemporaryDirectory
-            
+
+
 class DensityMDAnalysisComponent(Component):
     '''
         A component to calculate the density using MDAnalysis.
@@ -21,7 +20,7 @@ class DensityMDAnalysisComponent(Component):
     def __init__(self, trajectory: mdtraj.Trajectory):
         self.universe = self.process_input(trajectory)
     
-    def process_input(self, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
+    def process_input(self, trajectory: mdtraj.Trajectory) -> MDAnalysis.Universe:
         with TemporaryDirectory() as tempdirname:
             trajectory.save_pdb(tempdirname+'temp.pdb')
             self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb')

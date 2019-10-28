@@ -1,6 +1,6 @@
 import mdtraj
-from gro_min_eq import GroSD, GroNVT, GroNPT
-from openmm_min_eq import OpenMMMin, OpenMMEq
+from .gro_min_eq import GroSD, GroNVT, GroNPT
+from .openmm_min_eq import OpenMMMin, OpenMMEq
 
 water = "tip3p"
 ff = "amber99"

@@ -32,7 +32,7 @@ class RDFComponent(Component):
         
     def compute(self):
         #water = self.trajectory.top.select('water')
-        pairs = self.trajectory.top.select_pairs('name O and water', 'name O and water')
+        pairs = self.trajectory.top.select_pairs('name C', 'name C')
         return mdtraj.compute_rdf(self.trajectory, pairs)
         
     def run(self, trajectory: mdtraj.Trajectory):

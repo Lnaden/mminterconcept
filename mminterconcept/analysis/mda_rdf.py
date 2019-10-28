@@ -34,12 +34,13 @@ class RDFMDAnalysisComponent(Component):
         # for ts in self.universe.trajectory:
             # density_by_frame[ts.frame] = (mass / (ts.volume / 1000)) * 1.6605387823355087
         # return density_by_frame
-        group = self.universe.select_atoms('name O')
+        group = self.universe.select_atoms('name C')
+        # ags = [[group, group]]
         # print(len(group))
-        rdf = InterRDF(group, group, nbins=200)
-        rdf.run(verbose = True)
-        return rdf.rdf / 10
-        
+        rdf = InterRDF(group, group, nbins=200, range=[0.0, 10.0])
+        rdf.run()
+        bins = rdf.bins
+        return bins, rdf.rdf        
         
         
         

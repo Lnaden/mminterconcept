@@ -29,6 +29,13 @@ class OMMMinEq(MinimizationEquilibration):
                                         constraints=app.forcefield.HBonds,
                                         rigidWater=True,
                                         nonbondedCutoff=1 * units.nanometer)
+            has_barostat = False
+            for force in system.getForces():
+                if isinstance(force, mm.MonteCarloBarostat):
+                    has_barostat = True
+                    break
+            if not has_barostat:
+                system.addForce(mm.MonteCarloBarostat(1*units.bar, 298*units.kelvin))
             output_context = self._do_openmm_thing(system)
             final_state = output_context.getState(getPositions=True, enforcePeriodicBox=True)
             final_coords = final_state.getPositions(asNumpy=True)
@@ -185,13 +192,13 @@ class OpenMMMin(OMMMinEq):
     def _build_integrator() -> mm.Integrator:
         return mm.LangevinIntegrator(298*units.kelvin,
                                      5/units.picoseconds,
-                                     2 * units.femtoseconds)
+                                     1 * units.femtoseconds)
 
     def _do_openmm_thing(self, system: mm.System) -> mm.Context:
         context = mm.Context(system, self._build_integrator())
         context.setPositions(self.trajectory.xyz[-1])
         context.setPeriodicBoxVectors(*self.trajectory.unitcell_vectors[-1])
-        mm.LocalEnergyMinimizer.minimize(context, maxIterations=50)
+        mm.LocalEnergyMinimizer.minimize(context)  # , maxIterations=500)
         return context
 
 
@@ -211,5 +218,6 @@ class OpenMMEq(OMMMinEq):
         context = mm.Context(system, integrator)
         context.setPositions(self.trajectory.xyz[-1])
         context.setPeriodicBoxVectors(*self.trajectory.unitcell_vectors[-1])
+        context.setVelocitiesToTemperature(298*units.kelvin)
         integrator.step(10)
         return context

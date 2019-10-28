@@ -6,9 +6,6 @@ from textwrap import dedent
 
 from qcengine.util import execute, temporary_directory
 
-from contextlib import contextmanager
-import os
-
 
 class GroMinEQ(MinimizationEquilibration):
 
@@ -68,7 +65,7 @@ class GroSD(GroMinEQ):
             integrator	= steep		; Algorithm (steep = steepest descent minimization)
             emtol		= 1000.0  	; Stop minimization when the maximum force < 1000.0 kJ/mol/nm
             emstep      = 0.01      ; Energy step size
-            nsteps		= 50	  	; Maximum number of (minimization) steps to perform
+            nsteps		= 500	  	; Maximum number of (minimization) steps to perform
             
             ; Parameters describing how to find the neighbors of each atom and how to calculate the interactions
             nstlist		    = 1		    ; Frequency to update the neighbor list and long range forces
@@ -88,7 +85,7 @@ class GroNVT(GroMinEQ):
             define		= -DPOSRES	; position restrain the protein
             ; Run parameters
             integrator	= md		; leap-frog integrator
-            nsteps		= 50		; 2 * 50000 = 100 ps
+            nsteps		= 500		; 2 * 50000 = 100 ps
             dt		    = 0.002		; 2 fs
             ; Output control
             nstxout		= 500		; save coordinates every 1.0 ps
@@ -136,7 +133,7 @@ class GroNPT(GroMinEQ):
             define		= -DPOSRES	; position restrain the protein
             ; Run parameters
             integrator	= md		; leap-frog integrator
-            nsteps		= 50		; 2 * 50000 = 100 ps
+            nsteps		= 500		; 2 * 50000 = 100 ps
             dt		    = 0.002		; 2 fs
             ; Output control
             nstxout		= 500		; save coordinates every 1.0 ps

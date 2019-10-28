@@ -7,92 +7,146 @@ GMX (Gromacs) API  for setting up an MD simulation
 
 from api import Workunit, Engine
 from collections import OrderedDict
+from tools import RandString
 import os
+
 
 class Gmx(Engine):
 
-	def __init__(self, pdbID : str, ff_solute='amber99', ff_solvent='tip3p', topfname='topol.top',
-			posrename='posre.itp', ofname='system.gro', ext='gro', **args):
+	def __init__(self, ff_solute='amber99', ff_solvent='tip3p', topfname='topol.top',
+			tprfname='topol.tpr', posrename='posre.itp', ofname='system.gro', 
+			ext='gro', exec='gmx', **args):
 
-		super().__init__(pdbID=pdbID, ff_solute=ff_solute, ff_solvent=ff_solvent, topfname=topfname, 
-				ofname=ofname, ext=ext, **args)
+		if 'fdir' not in args:
+			args['fdir'] = 'GMX_' + RandString.name()
+		else:
+			args['fdir'] = 'GMX_' + args['fdir']
 
-		self._gmx_args = {
-			'_exec': 'gmx',
-			'ifname': os.path.abspath(f'{pdbID}.{ext}'),
-			'ff_solute': ff_solute,
-			'ff_solvent': ff_solvent,
-			'ofname': ofname,
-			'topfname': topfname,
-			'posrename': posrename
-		}
+		# Gonna save structure, top, and tpr files in each work unit
+		args['_static_dirs'] = ('struct', 'top', 'tpr')
+		
+		super().__init__(ff_solute=ff_solute, ff_solvent=ff_solvent, topfname=topfname, 
+				ofname=ofname, ext=ext, exec=exec, **args)
 
-	def pdb2gmx(self):
-		with Workunit(keep=False) as Pdb2gmx:
+		# Position restraints and tpr files are gromacs-specific
+		self._args['posrename'] = posrename
+		self._args['tprfname'] = tprfname
+
+		# Delete all tmp files by default
+		if 'keep' not in args:
+			self._keep = False
+
+	def _updateArgs(self, **rargs):
+		for key in rargs:
+			if key == 'struct':
+				self._args['ifname'] = rargs[key]
+			elif key == 'top':
+				if isinstance(rargs['top'], list):
+					self._args['topfname'], self._args['posrename'] = rargs[key]
+				else:
+					self._args['topfname'] = rargs[key]
+			elif key == 'tpr':
+				self._args['tprfname'] = rargs[key]
+
+			self._args['_system'] = self._abspath(self._args['ifname'])
+
+	def genTop(self):
+		with Workunit(keep=self._keep) as Pdb2gmx:
 			gmx_args = OrderedDict()
 
-			# HACKISH!!
-			gmx_args['_exec'] = self._gmx_args['_exec']
+			gmx_args['_exec'] = self._args['_exec']
 			gmx_args['_tool'] = 'pdb2gmx'
 
-			gmx_args['-ff'] = self._gmx_args['ff_solute']
-			gmx_args['-water'] = self._gmx_args['ff_solvent']
-			gmx_args['-f'] = self._gmx_args['ifname']
-			gmx_args['-o'] = self._gmx_args['ofname']
-			gmx_args['-p'] = self._gmx_args['topfname']
-			gmx_args['-i'] = self._gmx_args['posrename']
+			gmx_args['-ff'] = self._args['ff_solute']
+			gmx_args['-water'] = self._args['ff_solvent']
+			gmx_args['-f'] = self._args['ifname']
+			gmx_args['-o'] = self._args['ofname']
+			gmx_args['-p'] = self._args['topfname']
+			gmx_args['-i'] = self._args['posrename']
 
 			args = self._dict_to_str(**gmx_args)
 
 			Pdb2gmx.run(cmd=args)
-			Pdb2gmx.store(sdir=self._sdir, struct=gmx_args['-o'], top=[gmx_args['-p'], gmx_args['-i']])
+			rargs = Pdb2gmx.store(sdir=self._abspath(), struct=gmx_args['-o'], top=[gmx_args['-p'], gmx_args['-i']])
 
-			self._gmx_args['ifname'] =  os.path.abspath(os.path.join(self._sdir, 'struct', gmx_args['-o']))
-			self._gmx_args['topfname'] =  os.path.abspath(os.path.join(self._sdir, 'top', gmx_args['-p']))
-			self._gmx_args['posrename'] =  os.path.abspath(os.path.join(self._sdir, 'top', gmx_args['-i']))
+			self._updateArgs(**rargs)
 
-	def editconf(self):
-		with Workunit(keep=False) as Editconf:
+	def buildBox(self, center=False):
+		with Workunit(keep=self._keep) as Editconf:
 
 			gmx_args = OrderedDict()
-			gmx_args['_exec'] = self._gmx_args['_exec']
+			gmx_args['_exec'] = self._args['_exec']
 			gmx_args['_tool'] = 'editconf'
-			gmx_args['-f'] = self._gmx_args['ifname']
-			gmx_args['-o'] = self._gmx_args['ofname']
-			gmx_args['-c'] = ' '
+			gmx_args['-f'] = self._args['ifname']
+			gmx_args['-o'] = self._args['ofname']
 			gmx_args['-box'] = ('{} ' * len(self._Box.bound)).format(*self._Box.bound)
 
+			if center:
+				gmx_args['-c'] = ' '
+
 			args = self._dict_to_str(**gmx_args)
-			print(args)
 
 			Editconf.run(cmd=args)
-			Editconf.store(sdir=self._sdir, struct=gmx_args['-o'])
+			rargs = Editconf.store(sdir=self._abspath(), struct=gmx_args['-o'])
 
-			self._gmx_args['ifname'] = os.path.abspath(os.path.join(self._sdir, 'struct', gmx_args['-o']))
+			self._updateArgs(**rargs)
 
-	def solvate(self):
-		with Workunit(keep=False) as Solvate:
+	def solvate(self, model):
+		with Workunit(keep=self._keep) as Solvate:
 
 			gmx_args = OrderedDict()
-			gmx_args['_exec'] = self._gmx_args['_exec']
+			gmx_args['_exec'] = self._args['_exec']
 			gmx_args['_tool'] = 'solvate'
-			gmx_args['-cp'] = self._gmx_args['ifname']
-			gmx_args['-cs'] = 'spc216'
-			gmx_args['-p'] = self._gmx_args['topfname']
-			gmx_args['-o'] = self._gmx_args['ofname']
+			gmx_args['-cp'] = self._args['ifname']
+			gmx_args['-cs'] = model
+			gmx_args['-p'] = self._args['topfname']
+			gmx_args['-o'] = self._args['ofname']
 
 			args = self._dict_to_str(**gmx_args)
-			print(args)
 
-			Solvate.run(cmd=args, input='SOL')
-			Solvate.store(sdir=self._sdir, struct=gmx_args['-o'], top=gmx_args['-p'])
+			Solvate.run(cmd=args)
+			rargs = Solvate.store(sdir=self._abspath(), struct=gmx_args['-o'], top=gmx_args['-p'])
 
-			self._gmx_args['ifname'] =  os.path.abspath(os.path.join(self._sdir, 'struct', gmx_args['-o']))
-			self._gmx_args['topfname'] =  os.path.abspath(os.path.join(self._sdir, 'top', gmx_args['-p']))
-			self._gmx_args['posrename'] =  os.path.abspath(os.path.join(self._sdir, 'top'))
+			self._updateArgs(**rargs)
 
-if __name__ == '__main__':
-	Test = Gmx(pdbID='1LFH', box=(9.5, 9, 7))
-	Test.pdb2gmx()
-	Test.editconf()
-	Test.solvate()
+	def genConfig(self, mdpfile, maxwarn=1):
+		with Workunit(keep=self._keep) as Grompp:
+
+			gmx_args = OrderedDict()
+			gmx_args['_exec'] = self._args['_exec']
+			gmx_args['_tool'] = 'grompp'
+			gmx_args['-f'] = mdpfile
+			gmx_args['-c'] = self._args['ifname']
+			gmx_args['-p'] = self._args['topfname']
+			gmx_args['-pp'] = 'solvated.top'
+			gmx_args['-o'] = self._args['tprfname']
+			gmx_args['-maxwarn'] = str(maxwarn)
+
+			args = self._dict_to_str(**gmx_args)
+			Grompp.run(cmd=args)
+			rargs = Grompp.store(sdir=self._abspath(), tpr=gmx_args['-o'], top=gmx_args['-pp'])
+
+			self._updateArgs(**rargs)
+
+	def addIons(self, conc, replace):
+		with Workunit(keep=self._keep) as GenIons:
+
+			gmx_args = OrderedDict()
+			gmx_args['_exec'] = self._args['_exec']
+			gmx_args['_tool'] = 'genion'
+			gmx_args['-s'] = self._args['tprfname']
+			gmx_args['-p'] = self._args['topfname']
+			gmx_args['-conc'] = str(conc)
+			gmx_args['-o'] = self._args['ofname']
+			gmx_args['-neutral'] = ' '
+
+			args = self._dict_to_str(**gmx_args)
+			GenIons.run(cmd=args, input=replace)
+			rargs = GenIons.store(sdir=self._abspath(), struct=gmx_args['-o'], top=gmx_args['-p'])
+
+			self._updateArgs(**rargs)
+
+	def getTop(self) -> str:
+		with open(self._abspath(self._args['topfname']), 'r') as f:
+			top = f.read()
+		return top

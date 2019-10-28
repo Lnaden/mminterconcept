@@ -6,7 +6,7 @@ Testing script
 '''
 
 import os
-from gmx_api import Gmx
+from .gmx_api import Gmx
 
 def ionize(Eng: Gmx, salinity: float, mdp: str, group: str='SOL') -> Gmx:
 

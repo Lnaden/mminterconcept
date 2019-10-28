@@ -1,4 +1,4 @@
-from min_eq_base import MinimizationEquilibration, tempcd
+from .min_eq_base import MinimizationEquilibration, tempcd
 from typing import Dict, Any
 import mdtraj
 import numpy as np

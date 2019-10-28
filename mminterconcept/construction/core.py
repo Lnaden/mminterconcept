@@ -5,49 +5,53 @@ DOC: Oct 21, 2019
 This module defines the System class for MD simulation/analysis
 '''
 
-from tools import ImportPDB
-from pydantic import BaseModel, Field
+from .tools import ImportPDB
+from pydantic import BaseModel
 import mdtraj
-from typing import Any
+
 
 class Species(mdtraj.Trajectory):
-	@classmethod
-	def __get_validators__(cls):
-		yield cls.validate
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
 
-	@classmethod
-	def validate(cls, v):
-		if not isinstance(v, str):
-			raise ValueError(f'strict string: str expected not {type(v)}')
-		return v
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise ValueError(f'strict string: str expected not {type(v)}')
+        return v
+
 
 class Box(BaseModel):
-	shape: str = 'box'
-	bound: tuple
+    shape: str = 'box'
+    bound: tuple
+
 
 class MDparams(BaseModel):
-	temp: float = None
-	press: float = None
+    temp: float = None
+    press: float = None
 
-	def __init__(self, temp, press, **args):
-		super().__init__(**args)
+    def __init__(self, temp, press, **args):
+        super().__init__(**args)
+
 
 class EMparams(BaseModel):
-        method: str = None
-        tol: float = None
+    method: str = None
+    tol: float = None
 
-        def __init__(self, method, tol, **args):
-                super().__init__(**args)
+    def __init__(self, method, tol, **args):
+        super().__init__(**args)
+
 
 class Props(BaseModel):
-	pH: float = None
+    pH: float = None
 
-	def __init__(self, pH, **args):
-		super().__init__(**args)
+    def __init__(self, pH, **args):
+        super().__init__(**args)
 
 class System:
-	Box: 'SimBox'
-	Species: 'Solute'
+    Box: 'SimBox'
+    Species: 'Solute'
 
-	def __init__(self, Box, Species, **args):
-		pass
+    def __init__(self, Box, Species, **args):
+        pass

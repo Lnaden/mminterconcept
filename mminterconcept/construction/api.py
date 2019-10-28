@@ -6,14 +6,14 @@ Generic API for MD solvers (e.g. Gromacs)
 '''
 
 import subprocess
-from tools import RandString, ImportPDB
-from core import Box
-from collections import OrderedDict
+from .tools import RandString, ImportPDB
+from .core import Box
 import os, sys
 import errno
-import shutil, shlex
-import six
+import shlex
+import shutil
 import mdtraj
+
 
 class PopenWithInput(subprocess.Popen):
 	def __init__(self, *args, **kwargs):
@@ -24,6 +24,7 @@ class PopenWithInput(subprocess.Popen):
 			return super().communicate(input.encode('utf-8'))
 		else:
 			return super().communicate()
+
 
 class Engine:
 

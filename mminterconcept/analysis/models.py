@@ -5,6 +5,7 @@ This module provides a base component API to be extended by components.
 from abc import ABC, abstractmethod
 import mdtraj
 
+
 class Component(ABC):
     def __init__():
         raise NotImplementedError('__init__ for Abstract class for a Component.')
@@ -20,7 +21,8 @@ class Component(ABC):
     @abstractmethod
     def run():
         raise NotImplementedError('run for Abstract class for a Component.')
-        
+
+
 class TrajectoryAnalyzerComponent(Component):
 
     @abstractmethod

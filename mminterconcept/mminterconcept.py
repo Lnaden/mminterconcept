@@ -22,6 +22,18 @@ from .production import (production,
                          gromacs_production,
                          openmm_production)
 
+from .analysis import (analysis,
+                       mda_com,
+                       mda_density,
+                       mda_rdf,
+                       mda_rmsd,
+                       mda_rog,
+                       mdtraj_com,
+                       mdtraj_density,
+                       mdtraj_rdf,
+                       mdtraj_rmsd,
+                       mdtraj_rog)
+
 
 if __name__ == "__main__":
     # Do something if this file is invoked on its own
@@ -43,4 +55,8 @@ if __name__ == "__main__":
     trajectory = production(trajectory=trajectory, topology=topology)
 
     # Analysis
-
+    com = analysis(trajectory)
+    density = analysis(trajectory)
+    rdf_r, rdf_p = analysis(trajectory)
+    rmsd = analysis(trajectory)
+    rog = analysis(trajectory)

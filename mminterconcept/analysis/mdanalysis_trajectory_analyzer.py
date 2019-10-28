@@ -2,13 +2,13 @@ from mminterconcept.analysis import mda_rmsd, mda_rog, mda_com, mda_density, mda
 import MDAnalysis
 import mdtraj
 
-from models import Component
+from .models import TrajectoryAnalyzerComponent
 
 from contextlib import contextmanager
 import os
 from tempfile import TemporaryDirectory
 
-class MDAnalysisTrajectoryComponent(Component):
+class MDAnalysisTrajectoryComponent(TrajectoryAnalyzerComponent):
     trajectory: mdtraj.Trajectory
     
     def __init__(self, trajectory: mdtraj.Trajectory=None):

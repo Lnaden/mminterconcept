@@ -96,8 +96,6 @@ if __name__ == '__main__':
 		########################################
 		System_solvated_ionized, ionized_top = solvate_ionize_protein(pdbID, box, mdp,
 			salinity=0.1, wdir=wdir, fdir='solvated_ionized')
-		breakpoint()
-		
 
 	except Exception:
 		raise

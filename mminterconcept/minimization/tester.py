@@ -13,6 +13,7 @@ minimizer = GroSD
 equlibrators = [GroNVT, GroNPT]
 
 minimizer = OpenMMMin
+# equlibrators = [GroNVT, GroNPT, OpenMMEq]
 equlibrators = [OpenMMEq]
 
 
@@ -22,6 +23,7 @@ def minimize(*, trajectory, topology):
 
 def equilibrate(*, trajectory, topology):
     for eq in equlibrators:
+        print(f"Running Equilibration {eq}")
         trajectory, topology = eq(trajectory=trajectory, topology=topology).run()
     return trajectory, topology
 
@@ -31,5 +33,3 @@ with open("solvated.top", 'r') as f:
 
 min_traj, min_top = minimize(trajectory=mdtraj.load("ion.h5"), topology=top)
 eq_traj, eq_top = equilibrate(trajectory=min_traj, topology=min_top)
-
-breakpoint()

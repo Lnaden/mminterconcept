@@ -2,7 +2,7 @@
 This module provides access to the MDTraj rdf function using a MDTraj Trajectory.
 '''
 
-from models import Component
+from .models import Component
 import numpy
 import mdtraj
 from typing import Tuple

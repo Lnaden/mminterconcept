@@ -2,7 +2,7 @@
 This module provides access to the MDTraj radius of gyration function using a MDTraj Trajectory.
 '''
 
-from models import Component
+from .models import Component
 import mdtraj
 import numpy
 

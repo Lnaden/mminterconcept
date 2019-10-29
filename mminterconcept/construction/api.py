@@ -14,7 +14,6 @@ import shlex
 import shutil
 import mdtraj
 
-
 class PopenWithInput(subprocess.Popen):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -25,7 +24,6 @@ class PopenWithInput(subprocess.Popen):
 		else:
 			return super().communicate()
 
-
 class Engine:
 
 	def _abspath(self, *args) -> str:
@@ -33,23 +31,20 @@ class Engine:
 
 	def __init__(self, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, exec: str, **args):
 
-		if 'wdir' in args:
-			os.chdir(args['wdir'])
-
 		if 'fdir' in args:
-			self._fdir = args['fdir']
+			self._fdir = 'tmp.' + args['fdir']
 		else:
-			self._fdir = RandString.name()
+			self._fdir = 'tmp.' + RandString.name()
 
 		if 'mod' not in args:
 			self._mod = 0o777
+
+		self._cwd = os.getcwd()
 
 		os.makedirs(self._fdir, exist_ok=True)
 		os.chmod(self._fdir, self._mod)
 
 		self._adir = os.path.abspath(self._fdir)
-
-		# os.chdir(self._fdir)
 
 		self._args = {
 			'_exec': exec,
@@ -65,11 +60,6 @@ class Engine:
 		else:
 			self._sdir = '..'
 
-		if 'box' not in args:
-			self._Box = Box(shape='cubic', bound=(10.0, 10.0, 10.0))  # we could estimate box lengths from protein size
-		else:
-			self._Box = Box(shape='cubic', bound=args['box'])
-
 		if 'pdbID' in args:
 			with ImportPDB(args['pdbID']) as SS:
 				# clean system of any water molecules
@@ -77,7 +67,6 @@ class Engine:
 				drySS.save(self._abspath(f'{args["pdbID"]}.{ext}'))
 
 			self._args['ifname'] = self._abspath(f'{args["pdbID"]}.{ext}')
-
 		else:
 			if 'System' in args:
 				args['System'].save(self._abspath(f'System.{ext}'))
@@ -86,6 +75,14 @@ class Engine:
 			else:
 				raise ValueError('pdbID or system keywords must be supplied')
 
+		if 'box' not in args:
+			xyz = drySS.xyz[0,:,:]
+			x, y, z = xyz[:,0], xyz[:,1], xyz[:,2]
+			thick = 2.0 # boundary layer of thickness 1 nm, total 2 nm
+			est_bound = (x.max() - x.min() + thick, y.max() - y.min() + thick, z.max() - z.min() + thick)
+			self._Box = Box(shape='cubic', bound=est_bound)
+		else:
+			self._Box = Box(shape='cubic', bound=args['box'])
 
 		# create new dirs if requested
 		if '_static_dirs' in args:

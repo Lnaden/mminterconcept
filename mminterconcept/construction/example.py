@@ -29,7 +29,6 @@ def solvate(Eng: Gmx, mdp: str) -> Gmx:
 
 	return Eng
 
-
 def initialize(mdp, **args) -> Gmx:
 
 	Eng = Gmx(mdp=mdp, **args)
@@ -49,53 +48,51 @@ def initialize(mdp, **args) -> Gmx:
 ############ Examples ###############################
 
 
-def solvate_ionize_protein(pdbID, box, mdp, salinity, **args):
+def solvate_ionize_protein(pdbID, mdp, salinity, **args):
 	""" Returns mdtraj.Trajectory """
-	Eng = initialize(mdp, pdbID=pdbID, box=box, **args)
+	Eng = initialize(mdp, pdbID=pdbID, **args)
 	Eng = solvate(Eng, mdp)
 	Eng = ionize(Eng, salinity, mdp)
 
 	return Eng.getSystem(), Eng.getTop()
 
 
-def solvate_protein(pdbID, box, mdp, **args):
-	Eng = initialize(mdp, pdbID=pdbID, box=box, **args)
+def solvate_protein(pdbID, mdp, **args):
+	Eng = initialize(mdp, pdbID=pdbID, **args)
 	Eng = solvate(Eng, mdp)
 
 	return Eng.getSystem(), Eng.getTop()
 
 
-def vacuum_protein(pdbID, box, mdp, **args):
-	Eng = initialize(mdp, pdbID=pdbID, box=box, **args)
+def vacuum_protein(pdbID, mdp, **args):
+	Eng = initialize(mdp, pdbID=pdbID, **args)
 	return Eng.getSystem(), Eng.getTop()
 
 
 if __name__ == '__main__':
 	try:
 		pdbID = '1LFH'
-		box = (9.5, 9, 7)
-		mdp = os.path.abspath('../data/1LFH/gmx/mdp/em.mdp')
-		wdir = os.getcwd()
+		mdp = os.path.abspath('../data/em.mdp')
 
 		#########################################
 		####### Protein in a box of vacuum ######
 		#########################################
-		System_vacuum, vacuum_top = vacuum_protein(pdbID, box, mdp, wdir=wdir, fdir='vacuum')
+		System_vacuum, vacuum_top = vacuum_protein(pdbID, mdp, fdir='vacuum')
 
 		# Expand System sim box and then solvate
 		System_vacuum
 
 		########################################
 		####### Protein in a box of water ######
-		System_solvated, solvated_top = solvate_protein(pdbID, box, mdp, wdir=wdir, fdir='solvated')
+		System_solvated, solvated_top = solvate_protein(pdbID, mdp, fdir='solvated')
 
 		# P.S. System_ionized without solvent is unphysical / not supported
 
 		########################################
 		### Protein in a box of water + ions ###
 		########################################
-		System_solvated_ionized, ionized_top = solvate_ionize_protein(pdbID, box, mdp,
-			salinity=0.1, wdir=wdir, fdir='solvated_ionized')
+		System_solvated_ionized, ionized_top = solvate_ionize_protein(pdbID, mdp,
+			salinity=0.1, fdir='solvated_ionized')
 
 	except Exception:
 		raise

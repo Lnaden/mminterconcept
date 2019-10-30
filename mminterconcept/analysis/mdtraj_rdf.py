@@ -2,7 +2,7 @@
 This module provides access to the MDTraj rdf function using a MDTraj Trajectory.
 '''
 
-from .models import Component
+from .mdtraj_trajectory_analyzer import MDTrajTrajectoryComponent
 import numpy
 import mdtraj
 from typing import Tuple
@@ -16,25 +16,22 @@ from typing import Tuple
     # return mdtraj.compute_rdf(trajectory, pairs)
     
     
-class RDFComponent(Component):
+class RDFComponent(MDTrajTrajectoryComponent):
     '''
         A component to calculate the RDF.
     '''
     trajectory: mdtraj.Trajectory
     
-    def __init__(self, trajectory: mdtraj.Trajectory):
-        #self.trajectory = self.process_input(trajectory_file)
-        self.trajectory = trajectory
+    def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
+        super().__init__(struct, trajectory, sel)
     
-    def process_input(self, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
-        #return mdtraj.load_pdb(trajectory_file)
-        return trajectory
-        
+    def process_input(self) -> mdtraj.Trajectory:
+        super().process_input()
+
     def compute(self):
-        #water = self.trajectory.top.select('water')
-        pairs = self.trajectory.top.select_pairs('name C', 'name C')
-        return mdtraj.compute_rdf(self.trajectory, pairs)
-        
-    def run(self, trajectory: mdtraj.Trajectory):
-        self.process_input(trajectory)
+        pairs = self.traj.top.select_pairs('all', 'all')
+        return mdtraj.compute_rdf(self.traj, pairs)
+
+    def run(self):
+        self.process_input()
         return self.compute()

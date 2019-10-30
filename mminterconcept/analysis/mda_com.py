@@ -28,7 +28,6 @@ class COMMDAnalysisComponent(MDAnalysisTrajectoryComponent):
         com_by_frame = numpy.ndarray(shape=(len(self.universe.trajectory), numpy.size(self.universe.atoms.positions,1)))
         for ts in self.universe.trajectory:
             com_by_frame[ts.frame,:] = self.universe.atoms.center_of_mass() / 10.0
-            print(com_by_frame)
         return com_by_frame
         
     def run(self) -> numpy.ndarray:

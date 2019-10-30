@@ -29,6 +29,10 @@ class Engine:
 	def _abspath(self, *args) -> str:
 		return os.path.abspath(os.path.join(self._adir, *args))
 
+	def clean(self):
+		if self._clean:
+			shutil.rmtree(self._adir, ignore_errors=True)
+
 	def __init__(self, ff_solute: str, ff_solvent: str, topfname: str, ofname: str, ext: str, exec: str, **args):
 
 		if 'fdir' in args:
@@ -38,6 +42,11 @@ class Engine:
 
 		if 'mod' not in args:
 			self._mod = 0o777
+
+		if 'clean' not in args:
+			self._clean = False
+		else:
+			self._clean = args['clean']
 
 		self._cwd = os.getcwd()
 
@@ -109,6 +118,11 @@ class Engine:
 		else:
 			System = mdtraj.load(self._abspath(self._args['_system']))
 			return System.atom_slice(System.topology.select(sel))
+
+	def getTop(self) -> str:
+		with open(self._abspath(self._args['topfname']), 'r') as f:
+			top = f.read()
+		return top
 
 class Workunit:
 	def __init__(self, keep=False, fdir=None, mod=None):

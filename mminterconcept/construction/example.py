@@ -54,37 +54,43 @@ def solvate_ionize_protein(pdbID, mdp, salinity, **args):
 	Eng = solvate(Eng, mdp)
 	Eng = ionize(Eng, salinity, mdp)
 
-	return Eng.getSystem(), Eng.getTop()
+	System, top = Eng.getSystem(), Eng.getTop()
+	Eng.clean()
+
+	return System, top
 
 
 def solvate_protein(pdbID, mdp, **args):
 	Eng = initialize(mdp, pdbID=pdbID, **args)
 	Eng = solvate(Eng, mdp)
 
-	return Eng.getSystem(), Eng.getTop()
+	System, top = Eng.getSystem(), Eng.getTop()
+	Eng.clean()
 
+	return System, top
 
 def vacuum_protein(pdbID, mdp, **args):
 	Eng = initialize(mdp, pdbID=pdbID, **args)
-	return Eng.getSystem(), Eng.getTop()
 
+	System, top = Eng.getSystem(), Eng.getTop()
+	Eng.clean()
+
+	return System, top
 
 if __name__ == '__main__':
 	try:
-		pdbID = '1LFH'
-		mdp = os.path.abspath('../data/em.mdp')
+		pdbID = '1L2Y'
+		mdp = os.path.abspath('../data/1LFH/gmx/mdp/em.mdp')
+		clean = False
 
 		#########################################
 		####### Protein in a box of vacuum ######
 		#########################################
-		System_vacuum, vacuum_top = vacuum_protein(pdbID, mdp, fdir='vacuum')
-
-		# Expand System sim box and then solvate
-		System_vacuum
+		System_vacuum, vacuum_top = vacuum_protein(pdbID, mdp, fdir='vacuum', clean=clean)
 
 		########################################
 		####### Protein in a box of water ######
-		System_solvated, solvated_top = solvate_protein(pdbID, mdp, fdir='solvated')
+		System_solvated, solvated_top = solvate_protein(pdbID, mdp, fdir='solvated', clean=clean)
 
 		# P.S. System_ionized without solvent is unphysical / not supported
 
@@ -92,7 +98,7 @@ if __name__ == '__main__':
 		### Protein in a box of water + ions ###
 		########################################
 		System_solvated_ionized, ionized_top = solvate_ionize_protein(pdbID, mdp,
-			salinity=0.1, fdir='solvated_ionized')
+			salinity=0.1, fdir='solvated_ionized', clean=clean)
 
 	except Exception:
 		raise

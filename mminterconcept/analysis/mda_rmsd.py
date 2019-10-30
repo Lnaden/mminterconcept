@@ -11,17 +11,8 @@ import MDAnalysis.analysis.rms
 from contextlib import contextmanager
 import os
 from tempfile import TemporaryDirectory
+from .conversion import Distance, Time
 
-# @contextmanager
-# def tempcd(*args, **kwargs):
-    # cur = os.getcwd()
-    # try:
-        # with TemporaryDirectory(*args, **kwargs) as tmpdir:
-            # os.chdir(tmpdir)
-            # yield
-    # finally:
-        # os.chdir(cur)
-            
 class RMSDMDAnalysisComponent(MDAnalysisTrajectoryComponent):
     '''
         A component to calculate the RMSD using MDAnalysis.
@@ -29,17 +20,17 @@ class RMSDMDAnalysisComponent(MDAnalysisTrajectoryComponent):
     
     universe: MDAnalysis.Universe
     
-    def __init__(self, trajectory: mdtraj.Trajectory):
-        super().__init__(trajectory)
+    def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str='protein'):
+        super().__init__(struct, trajectory, sel)
     
-    def process_input(self) -> MDAnalysis.Universe:
-        return super().process_input(self.trajectory)
+    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> MDAnalysis.Universe:
+        return super().process_input(struct, trajectory, sel)
         
     def compute(self) -> np.ndarray:
-        RMSD = MDAnalysis.analysis.rms.RMSD(self.universe.atoms, self.universe, sel='protein')
+        RMSD = MDAnalysis.analysis.rms.RMSD(self.universe.atoms, self.universe, sel=self.sel)
         RMSD.run()
-        return RMSD.rmsd.flatten()
+        return RMSD.rmsd[:,0] * Time.fs_to_ps, RMSD.rmsd[:,1] * Distance.ang_to_nm
         
-    def run(self):
-        self.process_input()
+    def run(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str='protein'):
+        self.process_input(struct, trajectory, sel)
         return self.compute()

@@ -6,13 +6,20 @@ class MDTrajTrajectoryComponent(TrajectoryAnalyzerComponent):
     trajectory: mdtraj.Trajectory
     struct: mdtraj.Trajectory
 
-    def __init__(self, struct: mdtraj.Trajectory=None, trajectory: mdtraj.Trajectory=None):
+    def __init__(self, struct: mdtraj.Trajectory=None, trajectory: mdtraj.Trajectory=None, sel : str = 'all'):
         self.trajectory = trajectory
         self.struct = struct
+        self.sel = sel
         
     def process_input(self):
-        self.universe = mdtraj.load(self.trajectory, top=self.struct)
-        return self.universe
+        self.traj = mdtraj.load(self.trajectory, top=self.struct)
+        self.ref = mdtraj.load(self.struct)
+        
+        indices = self.traj.top.select(self.sel)
+        self.traj = self.traj.atom_slice(indices)
+        self.ref = self.ref.atom_slice(indices)
+
+        return self.traj
 
     def compute(self):
         pass

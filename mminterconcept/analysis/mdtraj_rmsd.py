@@ -2,34 +2,25 @@
 This module provides access to the MDTraj rmsd function using a MDTraj Trajectory.
 '''
 
-from .models import Component
+from .mdtraj_trajectory_analyzer import MDTrajTrajectoryComponent
 import numpy
 import mdtraj
 
-# def mdtraj_rmsd(trajectory_file: str) -> numpy.ndarray:
-    # '''
-        # This method provides easy access to MDTraj's rmsd function.
-    # '''
-    # trajectory = mdtraj.load_pdb(trajectory_file)
-    # return mdtraj.rmsd(trajectory, trajectory, 0)
-    
-class RMSDComponent(Component):
+class RMSDComponent(MDTrajTrajectoryComponent):
     '''
         A component to calculate the RMSD.
     '''
     trajectory: mdtraj.Trajectory
     
-    def __init__(self, trajectory: mdtraj.Trajectory):
-        #self.trajectory = self.process_input(trajectory_file)
-        self.trajectory = trajectory
+    def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
+        super().__init__(struct, trajectory)
     
-    def process_input(self, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
-        #return mdtraj.load_pdb(trajectory_file)
-        return trajectory
-        
+    def process_input(self) -> mdtraj.Trajectory:
+        return super().process_input()
+
     def compute(self):
-        return mdtraj.rmsd(self.trajectory, self.trajectory, 0)
+        return self.traj.time, mdtraj.rmsd(self.traj, self.ref)
         
-    def run(self, trajectory: mdtraj.Trajectory):
-        self.process_input(trajectory)
+    def run(self):
+        self.process_input()
         return self.compute()

@@ -50,7 +50,7 @@ class Gmx(Engine):
 
 			self._args['_system'] = self._abspath(self._args['ifname'])
 
-	def genTop(self):
+	def genTop(self, ignh=True):
 		with Workunit(keep=self._keep) as Pdb2gmx:
 			gmx_args = OrderedDict()
 
@@ -63,6 +63,9 @@ class Gmx(Engine):
 			gmx_args['-o'] = self._args['ofname']
 			gmx_args['-p'] = self._args['topfname']
 			gmx_args['-i'] = self._args['posrename']
+
+			if ignh:
+				gmx_args['-ignh'] = ' '
 
 			args = self._dict_to_str(**gmx_args)
 
@@ -145,8 +148,3 @@ class Gmx(Engine):
 			rargs = GenIons.store(sdir=self._abspath(), struct=gmx_args['-o'], top=gmx_args['-p'])
 
 			self._updateArgs(**rargs)
-
-	def getTop(self) -> str:
-		with open(self._abspath(self._args['topfname']), 'r') as f:
-			top = f.read()
-		return top

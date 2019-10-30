@@ -38,53 +38,53 @@ def analysis(trajectory: mdtraj.Trajectory) -> Union[np.ndarray, Tuple[np.ndarra
 # COM
 def mda_com(trajectory: mdtraj.Trajectory) -> np.ndarray:
     a = COMMDAnalysisComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 def mdtraj_com(trajectory: mdtraj.Trajectory) -> np.ndarray:
     a = COMComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 # Density
 def mda_density(trajectory: mdtraj.Trajectory) -> np.ndarray:
     a = DensityMDAnalysisComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 def mdtraj_density(trajectory: mdtraj.Trajectory) -> np.ndarray:
     a = DensityComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 # RDF
 def mda_rdf(trajectory: mdtraj.Trajectory) -> Tuple[np.ndarray, np.ndarray]:
     a = RDFMDAnalysisComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 def mdtraj_rdf(trajectory: mdtraj.Trajectory) -> Tuple[np.ndarray, np.ndarray]:
     a = RDFComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 # RMSD
 def mda_rmsd(trajectory: mdtraj.Trajectory) -> np.ndarray:
     a = RMSDMDAnalysisComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 def mdtraj_rmsd(trajectory: mdtraj.Trajectory) -> np.ndarray:
     a = RMSDComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 # RoG
 def mda_rog(trajectory: mdtraj.Trajectory) -> np.ndarray:
     a = ROGMDAnalysisComponent(trajectory)
-    return a.compute()
+    return a.run()
 
 
 def mdtraj_rog(trajectory: mdtraj.Trajectory) -> np.ndarray:
     a = ROGComponent(trajectory)
-    return a.compute()
+    return a.run()

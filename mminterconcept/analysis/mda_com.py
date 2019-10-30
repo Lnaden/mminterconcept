@@ -2,7 +2,7 @@
 This module provides access to the MDAnalysis center of mass function using a MDTraj Trajectory.
 '''
 
-from .mdanalysis_trajectory_analyzer import MDAnalysisTrajectoryComponent
+from .models import Component
 import numpy
 import mdtraj
 import MDAnalysis
@@ -13,7 +13,7 @@ from tempfile import TemporaryDirectory
 
 from .conversion import Distance, Time
 
-class COMMDAnalysisComponent(MDAnalysisTrajectoryComponent):
+class COMMDAnalysisComponent(Component):
     '''
         A component to calculate the center of mass using MDAnalysis.
     '''
@@ -21,10 +21,18 @@ class COMMDAnalysisComponent(MDAnalysisTrajectoryComponent):
     universe: MDAnalysis.Universe
     
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
-        super().__init__(struct, trajectory, sel)
+        self.trajectory = trajectory
+        self.struct = struct
+        self.sel = sel
     
-    def process_input(self, struct, trajectory, sel) -> MDAnalysis.Universe:
-        return super().process_input(struct, trajectory, sel)
+    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> MDAnalysis.Universe:
+        with TemporaryDirectory() as tempdirname:
+            struct.save(tempdirname+'temp.pdb')
+            trajectory.save(tempdirname+'temp.trr')
+            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb', tempdirname+'temp.trr')
+        self.sel = sel
+
+        return self.universe
 
     def compute(self) -> numpy.ndarray:
         com_by_frame = numpy.ndarray(shape=(len(self.universe.trajectory), numpy.size(self.universe.atoms.positions,1)))

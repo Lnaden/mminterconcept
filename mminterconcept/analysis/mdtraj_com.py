@@ -2,7 +2,7 @@
 This module provides access to the MDTraj center of mass function using a MDTraj Trajectory.
 '''
 
-from .mdtraj_trajectory_analyzer import MDTrajTrajectoryComponent
+from .models import Component
 import mdtraj
 import numpy
 
@@ -13,17 +13,26 @@ import numpy
     # trajectory = mdtraj.load_pdb(trajectory_file)
     # return mdtraj.compute_center_of_mass(trajectory)
     
-class COMComponent(MDTrajTrajectoryComponent):
+class COMComponent(Component):
     '''
         A component to calculate the Density.
     '''
     trajectory: mdtraj.Trajectory
     
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel : str = 'protein'):
-        super().__init__(struct, trajectory, sel)
+        self.trajectory = trajectory
+        self.struct = struct
+        self.sel = sel
+        
+    def process_input(self, struct, trajectory, sel='all'):
+        self.traj = trajectory
+        self.ref = struct
  
-    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel : str = 'protein') -> mdtraj.Trajectory:
-        return super().process_input(struct, trajectory, sel)
+        indices = self.traj.top.select(sel)
+        self.traj = self.traj.atom_slice(indices)
+        self.ref = self.ref.atom_slice(indices)
+
+        return self.traj
         
     def compute(self):
         return self.traj.time, mdtraj.compute_center_of_mass(self.traj)

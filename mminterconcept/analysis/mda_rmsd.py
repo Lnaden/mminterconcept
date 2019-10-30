@@ -2,7 +2,7 @@
 This module provides access to the MDAnalysis rmsd function using a MDTraj Trajectory.
 '''
 
-from .mdanalysis_trajectory_analyzer import MDAnalysisTrajectoryComponent
+from .models import Component
 import numpy as np
 import mdtraj
 import MDAnalysis
@@ -13,7 +13,7 @@ import os
 from tempfile import TemporaryDirectory
 from .conversion import Distance, Time
 
-class RMSDMDAnalysisComponent(MDAnalysisTrajectoryComponent):
+class RMSDMDAnalysisComponent(Component):
     '''
         A component to calculate the RMSD using MDAnalysis.
     '''
@@ -21,10 +21,18 @@ class RMSDMDAnalysisComponent(MDAnalysisTrajectoryComponent):
     universe: MDAnalysis.Universe
     
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str='protein'):
-        super().__init__(struct, trajectory, sel)
+        self.trajectory = trajectory
+        self.struct = struct
+        self.sel = sel
     
     def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> MDAnalysis.Universe:
-        return super().process_input(struct, trajectory, sel)
+        with TemporaryDirectory() as tempdirname:
+            struct.save(tempdirname+'temp.pdb')
+            trajectory.save(tempdirname+'temp.trr')
+            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb', tempdirname+'temp.trr')
+        self.sel = sel
+
+        return self.universe
         
     def compute(self) -> np.ndarray:
         RMSD = MDAnalysis.analysis.rms.RMSD(self.universe.atoms, self.universe, sel=self.sel)

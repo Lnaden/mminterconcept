@@ -2,7 +2,7 @@
 This module provides access to the MDAnalysis radius of gyration function using a MDTraj Trajectory.
 '''
 
-from .mdanalysis_trajectory_analyzer import MDAnalysisTrajectoryComponent
+from .models import Component
 import numpy
 import mdtraj
 import MDAnalysis
@@ -12,7 +12,7 @@ from contextlib import contextmanager
 import os
 from tempfile import TemporaryDirectory
 
-class ROGMDAnalysisComponent(MDAnalysisTrajectoryComponent):
+class ROGMDAnalysisComponent(Component):
     '''
         A component to calculate the radius of gyration using MDAnalysis.
     '''
@@ -20,10 +20,18 @@ class ROGMDAnalysisComponent(MDAnalysisTrajectoryComponent):
     universe: MDAnalysis.Universe
     
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str='protein'):
-        super().__init__(struct, trajectory, sel)
+        self.trajectory = trajectory
+        self.struct = struct
+        self.sel = sel
     
-    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str='protein') -> mdtraj.Trajectory:
-        return super().process_input(struct, trajectory, sel)
+    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> MDAnalysis.Universe:
+        with TemporaryDirectory() as tempdirname:
+            struct.save(tempdirname+'temp.pdb')
+            trajectory.save(tempdirname+'temp.trr')
+            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb', tempdirname+'temp.trr')
+        self.sel = sel
+
+        return self.universe
         
     def compute(self):
         rg_by_frame = numpy.empty(len(self.universe.trajectory))

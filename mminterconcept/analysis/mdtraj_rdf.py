@@ -2,7 +2,7 @@
 This module provides access to the MDTraj rdf function using a MDTraj Trajectory.
 '''
 
-from .mdtraj_trajectory_analyzer import MDTrajTrajectoryComponent
+from .models import Component
 import numpy
 import mdtraj
 from typing import Tuple
@@ -16,17 +16,26 @@ from typing import Tuple
     # return mdtraj.compute_rdf(trajectory, pairs)
     
     
-class RDFComponent(MDTrajTrajectoryComponent):
+class RDFComponent(Component):
     '''
         A component to calculate the RDF.
     '''
     trajectory: mdtraj.Trajectory
     
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
-        super().__init__(struct, trajectory, sel)
-    
-    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> mdtraj.Trajectory:
-        super().process_input(struct, trajectory, sel)
+        self.trajectory = trajectory
+        self.struct = struct
+        self.sel = sel
+        
+    def process_input(self, struct, trajectory, sel='all'):
+        self.traj = trajectory
+        self.ref = struct
+ 
+        indices = self.traj.top.select(sel)
+        self.traj = self.traj.atom_slice(indices)
+        self.ref = self.ref.atom_slice(indices)
+
+        return self.traj
 
     def compute(self):
         pairs = self.traj.top.select_pairs('all', 'all')

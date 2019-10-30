@@ -2,7 +2,7 @@
 This module provides access to the MDTraj density function using a MDTraj Trajectory.
 '''
 
-from .mdtraj_trajectory_analyzer import MDTrajTrajectoryComponent
+from .models import Component
 import mdtraj
 import numpy
 from typing import Tuple
@@ -14,17 +14,26 @@ from typing import Tuple
     # trajectory = mdtraj.load_pdb(trajectory_file)
     # return mdtraj.density(trajectory)
     
-class DensityComponent(MDTrajTrajectoryComponent):
+class DensityComponent(Component):
     '''
         A component to calculate the Density.
     '''
     trajectory: mdtraj.Trajectory
     
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'all'):
-        super().__init__(struct, trajectory, sel)
-    
-    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> mdtraj.Trajectory:
-        return super().process_input(struct, trajectory, sel)
+        self.trajectory = trajectory
+        self.struct = struct
+        self.sel = sel
+        
+    def process_input(self, struct, trajectory, sel='all'):
+        self.traj = trajectory
+        self.ref = struct
+ 
+        indices = self.traj.top.select(sel)
+        self.traj = self.traj.atom_slice(indices)
+        self.ref = self.ref.atom_slice(indices)
+
+        return self.traj
         
     def compute(self) -> Tuple[numpy.ndarray, numpy.ndarray]:
         masses = numpy.array([atom.element.mass for atom in self.traj.top.atoms])

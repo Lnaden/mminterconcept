@@ -2,7 +2,7 @@
 This module provides access to the a mass density in MDAnalysis using a MDTraj Trajectory.
 '''
 
-from .mdanalysis_trajectory_analyzer import MDAnalysisTrajectoryComponent
+from .models import Component
 import numpy
 import mdtraj
 import MDAnalysis
@@ -10,7 +10,7 @@ from .conversion import Distance
 
 from tempfile import TemporaryDirectory
 
-class DensityMDAnalysisComponent(MDAnalysisTrajectoryComponent):
+class DensityMDAnalysisComponent(Component):
     '''
         A component to calculate the density using MDAnalysis.
     '''
@@ -18,10 +18,18 @@ class DensityMDAnalysisComponent(MDAnalysisTrajectoryComponent):
     universe: MDAnalysis.Universe
     
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'all'):
-        super().__init__(struct, trajectory, str)
+        self.trajectory = trajectory
+        self.struct = struct
+        self.sel = sel
     
-    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel) -> MDAnalysis.Universe:
-        return super().process_input(struct, trajectory, sel)
+    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> MDAnalysis.Universe:
+        with TemporaryDirectory() as tempdirname:
+            struct.save(tempdirname+'temp.pdb')
+            trajectory.save(tempdirname+'temp.trr')
+            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb', tempdirname+'temp.trr')
+        self.sel = sel
+
+        return self.universe
         
     def compute(self) -> numpy.ndarray:
         density_by_frame = numpy.empty(len(self.universe.trajectory))

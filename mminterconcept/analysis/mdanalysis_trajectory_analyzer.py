@@ -1,31 +1,35 @@
-from mminterconcept.analysis import mda_rmsd, mda_rog, mda_com, mda_density, mda_rdf
 import MDAnalysis
 import mdtraj
 
 from .models import TrajectoryAnalyzerComponent
-
 from tempfile import TemporaryDirectory
 
 
 class MDAnalysisTrajectoryComponent(TrajectoryAnalyzerComponent):
     trajectory: mdtraj.Trajectory
     
-    def __init__(self, trajectory: mdtraj.Trajectory=None):
+    def __init__(self, trajectory: mdtraj.Trajectory):
         self.trajectory = trajectory
-        
-    def process_input(self, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
+
+    def process_input(self) -> MDAnalysis.Universe:
         with TemporaryDirectory() as tempdirname:
-            trajectory.save_pdb(tempdirname+'temp.pdb')
-            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb')
+            self.trajectory.save(tempdirname+'temp.pdb')
+            self.trajectory.save(tempdirname+'temp.trr')
+            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb', tempdirname+'temp.trr')
+
         return self.universe
     
     def compute(self):
-        pass
+        raise NotImplementedError
     
-    def run(self, trajectory: mdtraj.Trajectory, cmd: str):
-        cmd_dict = {'rdf': mda_rdf.RDFMDAnalysisComponent, 'rmsd': mda_rmsd.RMSDMDAnalysisComponent, 'rog': mda_rog.ROGMDAnalysisComponent, 'com': mda_com.COMMDAnalysisComponent, 'density': mda_density.DensityMDAnalysisComponent}
+    def run(self, cmd: str):
+        from . import mda_rmsd, mda_rog, mda_com, mda_density, mda_rdf
+
+        cmd_dict = {'rdf': mda_rdf.RDFMDAnalysisComponent, 'rmsd': mda_rmsd.RMSDMDAnalysisComponent, 'rog': mda_rog.ROGMDAnalysisComponent, 
+                    'com': mda_com.COMMDAnalysisComponent, 'density': mda_density.DensityMDAnalysisComponent}
+
         if cmd not in cmd_dict:
-            raise KeyError('Operation %s is unsupported by this component.' % (cmd))
+            raise KeyError(f'Operation {cmd} not supported by this component.')
         
-        comp = cmd_dict[cmd](trajectory)
-        return comp.run(trajectory)
+        comp = cmd_dict[cmd]
+        return comp.run()

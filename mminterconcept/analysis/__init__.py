@@ -31,60 +31,51 @@ __all__ = ["analysis",
            ]
 
 
-def analysis(trajectory: mdtraj.Trajectory) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+def analysis(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     raise NotImplementedError()
 
-
 # COM
-def mda_com(trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = COMMDAnalysisComponent(trajectory)
+def mda_com(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
+    a = COMMDAnalysisComponent(struct, trajectory)
     return a.run()
 
 
-def mdtraj_com(trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = COMComponent(trajectory)
+def mdtraj_com(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
+    a = COMComponent(struct, trajectory)
     return a.run()
-
 
 # Density
-def mda_density(trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = DensityMDAnalysisComponent(trajectory)
+def mda_density(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
+    a = DensityMDAnalysisComponent(struct, trajectory)
     return a.run()
 
-
-def mdtraj_density(trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = DensityComponent(trajectory)
+def mdtraj_density(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
+    a = DensityComponent(struct, trajectory)
     return a.run()
-
 
 # RDF
-def mda_rdf(trajectory: mdtraj.Trajectory) -> Tuple[np.ndarray, np.ndarray]:
-    a = RDFMDAnalysisComponent(trajectory)
+def mda_rdf(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> Tuple[np.ndarray, np.ndarray]:
+    a = RDFMDAnalysisComponent(struct, trajectory)
     return a.run()
 
-
-def mdtraj_rdf(trajectory: mdtraj.Trajectory) -> Tuple[np.ndarray, np.ndarray]:
-    a = RDFComponent(trajectory)
+def mdtraj_rdf(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> Tuple[np.ndarray, np.ndarray]:
+    a = RDFComponent(struct, trajectory)
     return a.run()
-
 
 # RMSD
-def mda_rmsd(trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = RMSDMDAnalysisComponent(trajectory)
+def mda_rmsd(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
+    a = RMSDMDAnalysisComponent(struct, trajectory)
     return a.run()
 
-
-def mdtraj_rmsd(trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = RMSDComponent(trajectory)
+def mdtraj_rmsd(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
+    a = RMSDComponent(struct, trajectory)
     return a.run()
-
 
 # RoG
-def mda_rog(trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = ROGMDAnalysisComponent(trajectory)
+def mda_rog(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
+    a = ROGMDAnalysisComponent(struct, trajectory)
     return a.run()
 
-
-def mdtraj_rog(trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = ROGComponent(trajectory)
+def mdtraj_rog(struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
+    a = ROGComponent(struct, trajectory)
     return a.run()

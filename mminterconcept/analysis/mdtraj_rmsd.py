@@ -13,14 +13,14 @@ class RMSDComponent(MDTrajTrajectoryComponent):
     trajectory: mdtraj.Trajectory
     
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
-        super().__init__(struct, trajectory)
+        super().__init__(struct, trajectory, sel)
     
-    def process_input(self) -> mdtraj.Trajectory:
-        return super().process_input()
+    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> mdtraj.Trajectory:
+        return super().process_input(struct, trajectory, sel)
 
     def compute(self):
         return self.traj.time, mdtraj.rmsd(self.traj, self.ref)
         
-    def run(self):
-        self.process_input()
+    def run(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
+        self.process_input(struct, trajectory, sel)
         return self.compute()

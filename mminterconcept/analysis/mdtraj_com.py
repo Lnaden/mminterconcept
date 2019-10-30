@@ -22,12 +22,12 @@ class COMComponent(MDTrajTrajectoryComponent):
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel : str = 'protein'):
         super().__init__(struct, trajectory, sel)
  
-    def process_input(self) -> mdtraj.Trajectory:
-        return super().process_input()
+    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel : str = 'protein') -> mdtraj.Trajectory:
+        return super().process_input(struct, trajectory, sel)
         
     def compute(self):
         return self.traj.time, mdtraj.compute_center_of_mass(self.traj)
         
-    def run(self):
-        self.process_input()
+    def run(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel : str = 'protein'):
+        self.process_input(struct, trajectory, sel)
         return self.compute()

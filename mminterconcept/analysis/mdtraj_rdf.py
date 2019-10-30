@@ -25,13 +25,13 @@ class RDFComponent(MDTrajTrajectoryComponent):
     def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
         super().__init__(struct, trajectory, sel)
     
-    def process_input(self) -> mdtraj.Trajectory:
-        super().process_input()
+    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> mdtraj.Trajectory:
+        super().process_input(struct, trajectory, sel)
 
     def compute(self):
         pairs = self.traj.top.select_pairs('all', 'all')
         return mdtraj.compute_rdf(self.traj, pairs)
 
-    def run(self):
-        self.process_input()
+    def run(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
+        self.process_input(struct, trajectory, sel)
         return self.compute()

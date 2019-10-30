@@ -18,14 +18,11 @@ class ROGMDAnalysisComponent(Component):
     
     universe: MDAnalysis.Universe
     
-    def __init__(self, trajectory: mdtraj.Trajectory):
-        self.universe = self.process_input(trajectory)
+    def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory):
+        super().__init__(struct, trajectory)
     
-    def process_input(self, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
-        with TemporaryDirectory() as tempdirname:
-            trajectory.save_pdb(tempdirname+'temp.pdb')
-            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb')
-        return self.universe
+    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
+        return super().process_input(struct, trajectory)
         
     def compute(self):
         rg_by_frame = numpy.empty(len(self.universe.trajectory))
@@ -33,6 +30,6 @@ class ROGMDAnalysisComponent(Component):
             rg_by_frame[ts.frame] = self.universe.atoms.radius_of_gyration() / 10.0
         return rg_by_frame
         
-    def run(self, trajectory: mdtraj.Trajectory):
+    def run(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory):
         self.process_input(trajectory)
         return self.compute()

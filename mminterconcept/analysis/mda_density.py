@@ -9,7 +9,6 @@ import MDAnalysis
 
 from tempfile import TemporaryDirectory
 
-
 class DensityMDAnalysisComponent(Component):
     '''
         A component to calculate the density using MDAnalysis.
@@ -18,19 +17,16 @@ class DensityMDAnalysisComponent(Component):
     universe: MDAnalysis.Universe
     
     def __init__(self, trajectory: mdtraj.Trajectory):
-        self.universe = self.process_input(trajectory)
+        super().__init__(trajectory)
     
     def process_input(self, trajectory: mdtraj.Trajectory) -> MDAnalysis.Universe:
-        with TemporaryDirectory() as tempdirname:
-            trajectory.save_pdb(tempdirname+'temp.pdb')
-            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb')
-        return self.universe
+        return super().process_input(trajectory)
         
-    def compute(self):
+    def compute(self) -> numpy.ndarray:
         density_by_frame = numpy.empty(len(self.universe.trajectory))
         mass = self.universe.atoms.total_mass()
         for ts in self.universe.trajectory:
-            density_by_frame[ts.frame] = (mass / (ts.volume / 1000)) * 1.6605387823355087
+            density_by_frame[ts.frame] = (mass / (ts.volume / 1000.)) * 1.6605387823355087
         return density_by_frame
         
     def run(self, trajectory: mdtraj.Trajectory):

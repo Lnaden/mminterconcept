@@ -20,13 +20,10 @@ class RDFMDAnalysisComponent(Component):
     universe: MDAnalysis.Universe
     
     def __init__(self, trajectory: mdtraj.Trajectory):
-        self.universe = self.process_input(trajectory)
+        super().__init__(trajectory)
     
     def process_input(self, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
-        with TemporaryDirectory() as tempdirname:
-            trajectory.save_pdb(tempdirname+'temp.pdb')
-            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb')
-        return self.universe
+        return super().process_input(trajectory)
         
     def compute(self):
         # density_by_frame = numpy.empty(len(self.universe.trajectory))
@@ -34,16 +31,14 @@ class RDFMDAnalysisComponent(Component):
         # for ts in self.universe.trajectory:
             # density_by_frame[ts.frame] = (mass / (ts.volume / 1000)) * 1.6605387823355087
         # return density_by_frame
-        group = self.universe.select_atoms('name C')
+        group = self.universe.select_atoms('protein')
         # ags = [[group, group]]
         # print(len(group))
         rdf = InterRDF(group, group, nbins=200, range=[0.0, 10.0])
         rdf.run()
         bins = rdf.bins
-        return bins, rdf.rdf        
-        
-        
-        
+        return bins, rdf.rdf
+
     def run(self, trajectory: mdtraj.Trajectory):
         self.process_input(trajectory)
         return self.compute()

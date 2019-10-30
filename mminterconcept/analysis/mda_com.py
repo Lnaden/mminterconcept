@@ -2,7 +2,7 @@
 This module provides access to the MDAnalysis center of mass function using a MDTraj Trajectory.
 '''
 
-from .models import Component
+from .mdanalysis_trajectory_analyzer import MDAnalysisTrajectoryComponent
 import numpy
 import mdtraj
 import MDAnalysis
@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import os
 from tempfile import TemporaryDirectory
 
-class COMMDAnalysisComponent(Component):
+class COMMDAnalysisComponent(MDAnalysisTrajectoryComponent):
     '''
         A component to calculate the center of mass using MDAnalysis.
     '''
@@ -19,20 +19,18 @@ class COMMDAnalysisComponent(Component):
     universe: MDAnalysis.Universe
     
     def __init__(self, trajectory: mdtraj.Trajectory):
-        self.universe = self.process_input(trajectory)
+        super().__init__(trajectory)
     
-    def process_input(self, trajectory: mdtraj.Trajectory) -> mdtraj.Trajectory:
-        with TemporaryDirectory() as tempdirname:
-            trajectory.save_pdb(tempdirname+'temp.pdb')
-            self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb')
-        return self.universe
-        
-    def compute(self):
-        mass_by_frame = numpy.ndarray(shape=(len(self.universe.trajectory), 3))
+    def process_input(self) -> MDAnalysis.Universe:
+        return super().process_input()
+
+    def compute(self) -> numpy.ndarray:
+        com_by_frame = numpy.ndarray(shape=(len(self.universe.trajectory), numpy.size(self.universe.atoms.positions,1)))
         for ts in self.universe.trajectory:
-            mass_by_frame[ts.frame] = self.universe.atoms.center_of_mass(compound='segments') / 10
-        return mass_by_frame
+            com_by_frame[ts.frame,:] = self.universe.atoms.center_of_mass() / 10.0
+            print(com_by_frame)
+        return com_by_frame
         
-    def run(self, trajectory: mdtraj.Trajectory):
-        self.process_input(trajectory)
+    def run(self) -> numpy.ndarray:
+        self.process_input()
         return self.compute()

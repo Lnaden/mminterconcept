@@ -76,13 +76,15 @@ class Engine:
 				drySS.save(self._abspath(f'{args["pdbID"]}.{ext}'))
 
 			self._args['ifname'] = self._abspath(f'{args["pdbID"]}.{ext}')
-		else:
-			if 'System' in args:
-				args['System'].save(self._abspath(f'System.{ext}'))
+		elif 'System' in args:
+			args['System'].save(self._abspath(f'System.{ext}'))
+			self._args['ifname'] = self._abspath(f'{args["System"]}.{ext}')
 
-				self._args['ifname'] = self._abspath(f'{args["System"]}.{ext}')
-			else:
-				raise ValueError('pdbID or system keywords must be supplied')
+		elif 'pdbFile' in args:
+			self._args['ifname'] = self._abspath(args['pdbFile'])
+			drySS = self.getSystemDry(mdtraj.load(self._args['ifname']))
+		else:
+			raise ValueError('pdbID, pdbFile, or system keywords must be supplied')
 
 		if 'box' not in args:
 			xyz = drySS.xyz[0,:,:]

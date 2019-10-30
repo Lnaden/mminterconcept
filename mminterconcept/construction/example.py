@@ -6,7 +6,7 @@ Testing script
 '''
 
 import os
-from .gmx_api import Gmx
+from gmx_api import Gmx
 
 def ionize(Eng: Gmx, salinity: float, mdp: str, group: str='SOL') -> Gmx:
 
@@ -48,9 +48,9 @@ def initialize(mdp, **args) -> Gmx:
 ############ Examples ###############################
 
 
-def solvate_ionize_protein(pdbID, mdp, salinity, **args):
+def solvate_ionize_protein(mdp, salinity, **args):
 	""" Returns mdtraj.Trajectory """
-	Eng = initialize(mdp, pdbID=pdbID, **args)
+	Eng = initialize(mdp, **args)
 	Eng = solvate(Eng, mdp)
 	Eng = ionize(Eng, salinity, mdp)
 
@@ -60,8 +60,8 @@ def solvate_ionize_protein(pdbID, mdp, salinity, **args):
 	return System, top
 
 
-def solvate_protein(pdbID, mdp, **args):
-	Eng = initialize(mdp, pdbID=pdbID, **args)
+def solvate_protein(mdp, **args):
+	Eng = initialize(mdp, **args)
 	Eng = solvate(Eng, mdp)
 
 	System, top = Eng.getSystem(), Eng.getTop()
@@ -69,8 +69,8 @@ def solvate_protein(pdbID, mdp, **args):
 
 	return System, top
 
-def vacuum_protein(pdbID, mdp, **args):
-	Eng = initialize(mdp, pdbID=pdbID, **args)
+def vacuum_protein(mdp, **args):
+	Eng = initialize(mdp, **args)
 
 	System, top = Eng.getSystem(), Eng.getTop()
 	Eng.clean()
@@ -79,25 +79,26 @@ def vacuum_protein(pdbID, mdp, **args):
 
 if __name__ == '__main__':
 	try:
-		pdbID = '1L2Y'
+		pdbID = '2PVP' #'1L2Y'
 		mdp = os.path.abspath('../data/1LFH/gmx/mdp/em.mdp')
+		pdbFile = os.path.abspath('../data/1LFH/gmx/struct/dialanine.pdb')
 		clean = False
 
 		#########################################
 		####### Protein in a box of vacuum ######
 		#########################################
-		System_vacuum, vacuum_top = vacuum_protein(pdbID, mdp, fdir='vacuum', clean=clean)
+		System_vacuum, vacuum_top = vacuum_protein(pdbID=pdbID, mdp=mdp, fdir='vacuum', clean=clean)
 
 		########################################
 		####### Protein in a box of water ######
-		System_solvated, solvated_top = solvate_protein(pdbID, mdp, fdir='solvated', clean=clean)
+		System_solvated, solvated_top = solvate_protein(pdbFile=pdbFile, mdp=mdp, fdir='solvated', clean=clean)
 
 		# P.S. System_ionized without solvent is unphysical / not supported
 
 		########################################
 		### Protein in a box of water + ions ###
 		########################################
-		System_solvated_ionized, ionized_top = solvate_ionize_protein(pdbID, mdp,
+		System_solvated_ionized, ionized_top = solvate_ionize_protein(pdbID=pdbID, mdp=mdp,
 			salinity=0.1, fdir='solvated_ionized', clean=clean)
 
 	except Exception:

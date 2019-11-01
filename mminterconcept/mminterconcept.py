@@ -38,12 +38,11 @@ from .analysis import (analysis,
 if __name__ == "__main__":
     # Do something if this file is invoked on its own
     pdbID = '1LFH'
-    box = (9.5, 9, 7)
     mdp = os.path.join(os.path.realpath(__file__), "data", "em.mdp")
     wdir = os.getcwd()
 
     # Construction steps
-    trajectory, topology = protein_constructor(pdbID, box, mdp, wdir=wdir)
+    trajectory, topology = protein_constructor(pdbID, mdp, wdir=wdir)
 
     # Minimization
     trajectory, topology = min_eq(trajectory=trajectory, topology=topology)

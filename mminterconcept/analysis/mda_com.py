@@ -29,7 +29,7 @@ class COMMDAnalysisComponent(Component):
         with TemporaryDirectory() as tempdirname:
 
             if top:
-                struct.save(tempdirname+'temp.pdb')
+                top.save(tempdirname+'temp.pdb')
             else:
                 trajectory.save(tempdirname+'temp.pdb')
 

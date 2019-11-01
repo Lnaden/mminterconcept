@@ -14,14 +14,14 @@ class GromacsProduction(GroMinEQ):
     title		= OPLS Lysozyme MD simulation 
     ; Run parameters
     integrator	= md		; leap-frog integrator
-    nsteps		= 5000	; 2 * 500000 = 1000 ps (1 ns)
-    dt		    = 0.002		; 2 fs
+    nsteps		= 1000	; 2 * 500000 = 1000 ps (1 ns)
+    dt		    = 0.001		; 2 fs
     ; Output control
-    nstxout		        = 5000		; save coordinates every 10.0 ps
-    nstvout		        = 5000		; save velocities every 10.0 ps
-    nstenergy	        = 5000		; save energies every 10.0 ps
-    nstlog		        = 5000		; update log file every 10.0 ps
-    nstxout-compressed  = 5000      ; save compressed coordinates every 10.0 ps
+    nstxout		        = 10		; save coordinates every 10.0 ps
+    nstvout		        = 10		; save velocities every 10.0 ps
+    nstenergy	        = 10		; save energies every 10.0 ps
+    nstlog		        = 10    	; update log file every 10.0 ps
+    nstxout-compressed  = 10      ; save compressed coordinates every 10.0 ps
                                     ; nstxout-compressed replaces nstxtcout
     compressed-x-grps   = System    ; replaces xtc-grps
     ; Bond parameters
@@ -70,6 +70,8 @@ class OpenMMProduction(OMMGeneral):
         context.setPositions(self.trajectory.xyz[-1])
         context.setPeriodicBoxVectors(*self.trajectory.unitcell_vectors[-1])
         context.setVelocitiesToTemperature(298*units.kelvin)
+        # Yes, this isnt correct, for the illustrative mock up though, it makes it work, so meh.
+        mm.LocalEnergyMinimizer.minimize(context)  # , maxIterations=500)
         return context
 
     def _make_trajectory(self, context: mm.Context) -> mdtraj.Trajectory:
@@ -82,6 +84,61 @@ class OpenMMProduction(OMMGeneral):
             state = context.getState(getPositions=True)
             coords[frame, :, :] = state.getPositions(asNumpy=True)/units.nanometers
             box[frame, :, :] = state.getPeriodicBoxVectors(asNumpy=True)/units.nanometers
+            context.getIntegrator().step(interval)
+        traj = mdtraj.Trajectory(coords, topology=self.trajectory.top)
+        traj.unitcell_vectors = box
+        return traj
+
+class OpenMMProduction2(OMMGeneral):
+
+    def _make_openmm_context(self, system: mm.System) -> mm.Context:
+        integrator = mm.LangevinIntegrator(298*units.kelvin,
+                                           5/units.picoseconds,
+                                           1 * units.femtoseconds)
+        context = mm.Context(system, integrator)
+        context.setPositions(self.trajectory.xyz[-1])
+        context.setPeriodicBoxVectors(*self.trajectory.unitcell_vectors[-1])
+        context.setVelocitiesToTemperature(298*units.kelvin)
+        # Yes, this isnt correct, for the illustrative mock up though, it makes it work, so meh.
+        mm.LocalEnergyMinimizer.minimize(context)  # , maxIterations=500)
+        return context
+
+    @staticmethod
+    def _forces(context):
+        n = context.getSystem().getNumForces()
+        out = {}
+        for idx in range(n):
+            out[idx] = context.getState(getForces=True, groups={idx}).getForces(asNumpy=True)
+        return out
+
+    def _debug(self, context):
+        state = context.getState(getPositions=True, getForces=True, getEnergy=True)
+        system = context.getSystem()
+        npart = system.getNumParticles()
+        coords = state.getPositions(asNumpy=True)
+        box = state.getPeriodicBoxVectors(asNumpy=True)
+        forces = self._forces(context)
+        max_forces = [f.max()._value for f in forces.values()]
+        max_force = np.argmax(max_forces)
+        max_particle = np.where(forces[max_force] == forces[max_force].max())[0][0]
+        dist = np.zeros(npart)
+        for i in range(npart):
+            dist[i] = np.mean(np.sqrt(np.sum((coords[i, :] - coords[max_particle, :]) ** 2)))
+        dist[max_particle] = np.inf
+        return forces, coords, box, max_force, max_particle, dist
+
+    def _make_trajectory(self, context: mm.Context) -> mdtraj.Trajectory:
+        steps = 1000
+        interval = 10
+        frames = steps // interval
+        coords = np.zeros([frames, self.trajectory.n_atoms, 3], dtype=float)
+        box = np.zeros([frames, 3, 3], dtype=float)
+        forces, coords_d, box_d, max_force, max_particle, dist = self._debug(context)
+        for frame in range(frames):
+            state = context.getState(getPositions=True)
+            coords[frame, :, :] = state.getPositions(asNumpy=True)/units.nanometers
+            box[frame, :, :] = state.getPeriodicBoxVectors(asNumpy=True)/units.nanometers
+            print(frame)
             context.getIntegrator().step(interval)
         traj = mdtraj.Trajectory(coords, topology=self.trajectory.top)
         traj.unitcell_vectors = box

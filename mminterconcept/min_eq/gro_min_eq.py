@@ -32,6 +32,7 @@ class GroMinEQ(MinimizationEquilibration):
                            "-c", gro_name,
                            "-p", topology_name,
                            "-o", grompp_tpr_name,
+                           "-norenum",
                            "-maxwarn", "1"
                            ]
             ret_grompp, proc_grompp = execute(grompp_proc,
@@ -85,7 +86,7 @@ class GroNVT(GroMinEQ):
             define		= -DPOSRES	; position restrain the protein
             ; Run parameters
             integrator	= md		; leap-frog integrator
-            nsteps		= 50000		; 2 * 50000 = 100 ps
+            nsteps		= 5000		; 2 * 50000 = 100 ps
             dt		    = 0.002		; 2 fs
             ; Output control
             nstxout		= 500		; save coordinates every 1.0 ps
@@ -133,7 +134,7 @@ class GroNPT(GroMinEQ):
             define		= -DPOSRES	; position restrain the protein
             ; Run parameters
             integrator	= md		; leap-frog integrator
-            nsteps		= 50000		; 2 * 50000 = 100 ps
+            nsteps		= 5000		; 2 * 50000 = 100 ps
             dt		    = 0.002		; 2 fs
             ; Output control
             nstxout		= 500		; save coordinates every 1.0 ps

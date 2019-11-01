@@ -22,12 +22,28 @@ class OMMGeneral(MinimizationEquilibration):
     def _make_trajectory(self, context: mm.Context) -> mdtraj.Trajectory:
         pass
 
+    @staticmethod
+    def _fix_water(system: mm.System):
+        force = mm.NonbondedForce
+        for force in system.getForces():
+            if isinstance(force, mm.NonbondedForce):
+                break
+        for index in range(force.getNumParticles()):
+            q, s, e = force.getParticleParameters(index)
+            if np.allclose(e / units.kilojoules_per_mole, 0):
+                force.setParticleParameters(index,
+                                            q,
+                                            0.264953 * units.nanometers,
+                                            0.0656888 * units.kilojoule_per_mole)
+
     def _run_internal(self) -> Dict[str, Any]:
         # Create System
         with tempcd():
             gro = "gro.top"
             with open(gro, 'w') as f:
                 f.write(self.topology)
+            # self.trajectory.topology.create_standard_bonds()
+            # self.trajectory = self.trajectory.image_molecules()
             # Convert gromacs top to parmed top before reading BECAUSE REASONS?
             p_gro = parmed.gromacs.GromacsTopologyFile(gro,
                                                        # Box is in angstroms
@@ -45,17 +61,26 @@ class OMMGeneral(MinimizationEquilibration):
             #                             nonbondedCutoff=1 * units.nanometer)
             system = p_gro.createSystem(nonbondedMethod=app.forcefield.PME,
                                         nonbondedCutoff=1 * units.nanometer,
-                                        constraints=app.forcefield.AllBonds,
-                                        rigidWater=True
+                                        constraints=app.forcefield.HBonds,
+                                        rigidWater=False
                                         )
             # system.addForce(mm.AndersenThermostat(298 * units.kelvin, 1 / units.picosecond))
             has_barostat = False
             for force in system.getForces():
                 if isinstance(force, mm.MonteCarloBarostat):
                     has_barostat = True
-                    break
+                try:
+                    force.setUsesPeriodicBoundaryConditions(True)
+                except:
+                    pass
+
+            # Yes, this isnt correct, for the illustrative mock up though, it makes it work, so meh.
+            self._fix_water(system)
+
             if not has_barostat:
                 system.addForce(mm.MonteCarloBarostat(1*units.bar, 298*units.kelvin))
+            for idx, force in enumerate(system.getForces()):
+                force.setForceGroup(idx)
             output_context = self._make_openmm_context(system)
             output_traj = self._make_trajectory(output_context)
 

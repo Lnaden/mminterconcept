@@ -41,8 +41,8 @@ class RMSDMDAnalysisComponent(Component):
     def compute(self) -> np.ndarray:
         RMSD = MDAnalysis.analysis.rms.RMSD(self.universe.atoms, self.universe, sel=self.sel, groupselections=[self.sel])
         RMSD.run()
-        return RMSD.rmsd[:,0] * Time.fs_to_ps, RMSD.rmsd[:,-1] * Distance.ang_to_nm
-        
+        return RMSD.rmsd[:, 1], RMSD.rmsd[:, -1] * Distance.ang_to_nm
+
     def run(self, trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory = None, sel: str='protein'):
         self.process_input(trajectory, top, sel)
         return self.compute()

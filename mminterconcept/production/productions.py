@@ -82,6 +82,7 @@ class OpenMMProduction(OMMGeneral):
             state = context.getState(getPositions=True)
             coords[frame, :, :] = state.getPositions(asNumpy=True)/units.nanometers
             box[frame, :, :] = state.getPeriodicBoxVectors(asNumpy=True)/units.nanometers
+            context.getIntegrator().step(interval)
         traj = mdtraj.Trajectory(coords, topology=self.trajectory.top)
         traj.unitcell_vectors = box
         return traj

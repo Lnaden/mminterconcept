@@ -19,18 +19,18 @@ class COMComponent(Component):
     '''
     trajectory: mdtraj.Trajectory
     
-    def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel : str = 'protein'):
+    def __init__(self, trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory = None, sel : str = 'protein'):
         self.trajectory = trajectory
-        self.struct = struct
+        self.top = top
         self.sel = sel
         
-    def process_input(self, struct, trajectory, sel='all'):
+    def process_input(self, trajectory, top: mdtraj.Trajectory = None, sel: str='all'):
         self.traj = trajectory
-        self.ref = struct
  
         indices = self.traj.top.select(sel)
         self.traj = self.traj.atom_slice(indices)
-        self.ref = self.ref.atom_slice(indices)
+        if top:
+            self.ref = top.atom_slice(indices)
 
         return self.traj
         

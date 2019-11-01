@@ -44,11 +44,11 @@ def mdtraj_com(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np
     return a.run(trajectory, top)
 
 # Density
-def mda_den(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+def mda_density(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
     a = DensityMDAnalysisComponent(trajectory, top)
     return a.run(trajectory, top)
 
-def mdtraj_den(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+def mdtraj_density(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
     a = DensityComponent(trajectory, top)
     return a.run(trajectory, top)
 

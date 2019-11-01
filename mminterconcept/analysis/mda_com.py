@@ -20,15 +20,21 @@ class COMMDAnalysisComponent(Component):
     
     universe: MDAnalysis.Universe
     
-    def __init__(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str = 'protein'):
+    def __init__(self, trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory = None, sel: str = 'protein'):
         self.trajectory = trajectory
-        self.struct = struct
+        self.top = top
         self.sel = sel
-    
-    def process_input(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str) -> MDAnalysis.Universe:
+
+    def process_input(self, trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory = None, sel: str = 'protein') -> MDAnalysis.Universe:
         with TemporaryDirectory() as tempdirname:
-            struct.save(tempdirname+'temp.pdb')
+
+            if top:
+                struct.save(tempdirname+'temp.pdb')
+            else:
+                trajectory.save(tempdirname+'temp.pdb')
+
             trajectory.save(tempdirname+'temp.trr')
+
             self.universe = MDAnalysis.Universe(tempdirname+'temp.pdb', tempdirname+'temp.trr')
         self.sel = sel
 
@@ -46,6 +52,6 @@ class COMMDAnalysisComponent(Component):
 
         return time, com_by_frame * Distance.ang_to_nm
         
-    def run(self, struct: mdtraj.Trajectory, trajectory: mdtraj.Trajectory, sel: str='protein') -> numpy.ndarray:
-        self.process_input(struct, trajectory, sel)
+    def run(self, trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory, sel: str='protein') -> numpy.ndarray:
+        self.process_input(trajectory, top, sel)
         return self.compute()

@@ -6,7 +6,7 @@ Testing script
 '''
 
 import os
-from gmx_api import Gmx
+from .gmx_api import Gmx
 
 def ionize(Eng: Gmx, salinity: float, mdp: str, group: str='SOL') -> Gmx:
 
@@ -80,8 +80,8 @@ def vacuum_protein(mdp, **args):
 if __name__ == '__main__':
 	try:
 		pdbID = '2PVP' #'1L2Y'
-		mdp = os.path.abspath('../data/1LFH/gmx/mdp/em.mdp')
-		pdbFile = os.path.abspath('../data/1LFH/gmx/struct/dialanine.pdb')
+		mdp = os.path.abspath('../data/gmx_mdp/em.mdp')
+		pdbFile = os.path.abspath('../data/1LFH/struct/dialanine.pdb')
 		clean = False
 
 		#########################################

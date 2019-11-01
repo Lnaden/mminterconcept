@@ -15,7 +15,9 @@ def protein_constructor(pdbID, mdp, **kwargs) -> Tuple[mdtraj.Trajectory, str]:
 
 def protein_constructor_vacuum(pdbID, mdp, **kwargs):
     Eng = initialize(mdp, pdbID=pdbID, **kwargs)
-    return Eng.getSystem(), Eng.getTop()
+    Sys, top = Eng.getSystem(), Eng.getTop()
+    Eng.clean()
+    return Sys, top
 
 
 def protein_constructor_solvate_ion(pdbID, mdp, **kwargs):
@@ -27,12 +29,13 @@ def protein_constructor_solvate_ion(pdbID, mdp, **kwargs):
     Eng = initialize(mdp, pdbID=pdbID, **kwargs)
     Eng = solvate(Eng, mdp)
     Eng = ionize(Eng, salinity, mdp)
-
-    return Eng.getSystem(), Eng.getTop()
-
+    Sys, top = Eng.getSystem(), Eng.getTop()
+    Eng.clean()
+    return Sys, top
 
 def protein_constructor_solvate(pdbID, mdp, **kwargs):
     Eng = initialize(mdp, pdbID=pdbID, **kwargs)
     Eng = solvate(Eng, mdp)
-
-    return Eng.getSystem(), Eng.getTop()
+    Sys, top = Eng.getSystem(), Eng.getTop()
+    Eng.clean()
+    return Sys, top

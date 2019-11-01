@@ -15,7 +15,7 @@ import mdtraj
 import numpy as np
 
 from typing import Tuple, Union
-from .plot import *
+from .visualize import *
 
 __all__ = ["analysis",
            "mda_com",
@@ -31,50 +31,50 @@ __all__ = ["analysis",
            ]
 
 
-def analysis(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+def analysis(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     raise NotImplementedError()
 
 # COM
-def mda_com(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = COMMDAnalysisComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mda_com(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+    a = COMMDAnalysisComponent(trajectory, top)
+    return a.run(trajectory, top)
 
-def mdtraj_com(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = COMComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mdtraj_com(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+    a = COMComponent(trajectory, top)
+    return a.run(trajectory, top)
 
 # Density
-def mda_den(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = DensityMDAnalysisComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mda_density(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+    a = DensityMDAnalysisComponent(trajectory, top)
+    return a.run(trajectory, top)
 
-def mdtraj_den(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = DensityComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mdtraj_density(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+    a = DensityComponent(trajectory, top)
+    return a.run(trajectory, top)
 
 # RDF
-def mda_rdf(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> Tuple[np.ndarray, np.ndarray]:
-    a = RDFMDAnalysisComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mda_rdf(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> Tuple[np.ndarray, np.ndarray]:
+    a = RDFMDAnalysisComponent(trajectory, top)
+    return a.run(trajectory, top)
 
-def mdtraj_rdf(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> Tuple[np.ndarray, np.ndarray]:
-    a = RDFComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mdtraj_rdf(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> Tuple[np.ndarray, np.ndarray]:
+    a = RDFComponent(trajectory, top)
+    return a.run(trajectory, top)
 
 # RMSD
-def mda_rmsd(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = RMSDMDAnalysisComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mda_rmsd(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+    a = RMSDMDAnalysisComponent(trajectory, top)
+    return a.run(trajectory, top)
 
-def mdtraj_rmsd(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = RMSDComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mdtraj_rmsd(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+    a = RMSDComponent(trajectory, top)
+    return a.run(trajectory, top)
 
 # RoG
-def mda_rog(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = ROGMDAnalysisComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mda_rog(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+    a = ROGMDAnalysisComponent(trajectory, top)
+    return a.run(trajectory, top)
 
-def mdtraj_rog(top: mdtraj.Trajectory, trajectory: mdtraj.Trajectory) -> np.ndarray:
-    a = ROGComponent(top, trajectory)
-    return a.run(top, trajectory)
+def mdtraj_rog(trajectory: mdtraj.Trajectory, top: mdtraj.Trajectory=None) -> np.ndarray:
+    a = ROGComponent(trajectory, top)
+    return a.run(trajectory, top)

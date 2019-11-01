@@ -44,7 +44,7 @@ class Engine:
 			self._mod = 0o777
 
 		if 'clean' not in args:
-			self._clean = False
+			self._clean = True
 		else:
 			self._clean = args['clean']
 

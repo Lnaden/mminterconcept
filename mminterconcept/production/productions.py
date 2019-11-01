@@ -3,7 +3,10 @@ from textwrap import dedent
 import simtk.openmm as mm
 import simtk.unit as units
 from ..min_eq.gro_min_eq import GroMinEQ
-from ..min_eq.openmm_min_eq import OMMMinEq
+from ..min_eq.openmm_min_eq import OMMGeneral
+
+import mdtraj
+import numpy as np
 
 
 class GromacsProduction(GroMinEQ):
@@ -57,9 +60,9 @@ class GromacsProduction(GroMinEQ):
     """)
 
 
-class OpenMMProduction(OMMMinEq):
+class OpenMMProduction(OMMGeneral):
 
-    def _do_openmm_thing(self, system: mm.System) -> mm.Context:
+    def _make_openmm_context(self, system: mm.System) -> mm.Context:
         integrator = mm.LangevinIntegrator(298*units.kelvin,
                                            5/units.picoseconds,
                                            1 * units.femtoseconds)
@@ -67,5 +70,18 @@ class OpenMMProduction(OMMMinEq):
         context.setPositions(self.trajectory.xyz[-1])
         context.setPeriodicBoxVectors(*self.trajectory.unitcell_vectors[-1])
         context.setVelocitiesToTemperature(298*units.kelvin)
-        integrator.step(100)
         return context
+
+    def _make_trajectory(self, context: mm.Context) -> mdtraj.Trajectory:
+        steps = 1000
+        interval = 10
+        frames = steps // interval
+        coords = np.zeros([frames, self.trajectory.n_atoms, 3], dtype=float)
+        box = np.zeros([frames, 3, 3], dtype=float)
+        for frame in range(frames):
+            state = context.getState(getPositions=True)
+            coords[frame, :, :] = state.getPositions(asNumpy=True)/units.nanometers
+            box[frame, :, :] = state.getPeriodicBoxVectors(asNumpy=True)/units.nanometers
+        traj = mdtraj.Trajectory(coords, topology=self.trajectory.top)
+        traj.unitcell_vectors = box
+        return traj

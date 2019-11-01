@@ -1,10 +1,12 @@
 from .min_eq_base import MinimizationEquilibration, tempcd
 from typing import Dict, Any
 import mdtraj
+import parmed
 import numpy as np
 import simtk.openmm as mm
 import simtk.openmm.app as app
 import simtk.unit as units
+
 from abc import abstractmethod
 
 GroTop = app.gromacstopfile.GromacsTopFile
@@ -22,13 +24,27 @@ class OMMMinEq(MinimizationEquilibration):
             gro = "gro.top"
             with open(gro, 'w') as f:
                 f.write(self.topology)
-            g_top = GroTop(gro,
-                           periodicBoxVectors=self.trajectory.unitcell_vectors[-1],
-                           includeDir="/Users/levinaden/miniconda3/envs/mminter/include/gromacs/")
-            system = g_top.createSystem(nonbondedMethod=app.forcefield.PME,
-                                        constraints=app.forcefield.HBonds,
-                                        rigidWater=True,
-                                        nonbondedCutoff=1 * units.nanometer)
+            # Convert gromacs top to parmed top before reading BECAUSE REASONS?
+            p_gro = parmed.gromacs.GromacsTopologyFile(gro,
+                                                       # Box is in angstroms
+                                                       box=[*(self.trajectory.unitcell_lengths * 10)[-1],
+                                                            *self.trajectory.unitcell_angles[-1]],
+                                                       parametrize=True)
+
+            # g_top = GroTop(gro,
+            #                periodicBoxVectors=self.trajectory.unitcell_vectors[-1],
+            #                includeDir="/Users/levinaden/miniconda3/envs/mminter/include/gromacs/")
+            # system = g_top.createSystem(nonbondedMethod=app.forcefield.PME,
+            #                             #constraints=app.forcefield.HBonds,
+            #                             constraints=app.forcefield.AllBonds,
+            #                             rigidWater=True,
+            #                             nonbondedCutoff=1 * units.nanometer)
+            system = p_gro.createSystem(nonbondedMethod=app.forcefield.PME,
+                                        nonbondedCutoff=1 * units.nanometer,
+                                        constraints=app.forcefield.AllBonds,
+                                        rigidWater=True
+                                        )
+            # system.addForce(mm.AndersenThermostat(298 * units.kelvin, 1 / units.picosecond))
             has_barostat = False
             for force in system.getForces():
                 if isinstance(force, mm.MonteCarloBarostat):
@@ -37,7 +53,7 @@ class OMMMinEq(MinimizationEquilibration):
             if not has_barostat:
                 system.addForce(mm.MonteCarloBarostat(1*units.bar, 298*units.kelvin))
             output_context = self._do_openmm_thing(system)
-            final_state = output_context.getState(getPositions=True, enforcePeriodicBox=True)
+            final_state = output_context.getState(getPositions=True, enforcePeriodicBox=False)
             final_coords = final_state.getPositions(asNumpy=True)
             final_vector = final_state.getPeriodicBoxVectors(asNumpy=True)
             output_traj = mdtraj.Trajectory(final_coords[np.newaxis, :]/units.nanometers, topology=self.trajectory.top)
@@ -190,15 +206,19 @@ class OpenMMMin(OMMMinEq):
 
     @staticmethod
     def _build_integrator() -> mm.Integrator:
+        # return mm.VerletIntegrator(0.1 * units.femtoseconds)
         return mm.LangevinIntegrator(298*units.kelvin,
                                      5/units.picoseconds,
                                      1 * units.femtoseconds)
 
     def _do_openmm_thing(self, system: mm.System) -> mm.Context:
-        context = mm.Context(system, self._build_integrator())
+        context = mm.Context(system, self._build_integrator(), mm.Platform.getPlatformByName("CPU"))
         context.setPositions(self.trajectory.xyz[-1])
         context.setPeriodicBoxVectors(*self.trajectory.unitcell_vectors[-1])
-        mm.LocalEnergyMinimizer.minimize(context)  # , maxIterations=500)
+        mm.LocalEnergyMinimizer.minimize(context, tolerance=2)  # , maxIterations=500)
+        # context.getIntegrator().step(50)
+        # pos = context.getState(getPositions=True).getPositions(asNumpy=True)
+        # mm.LocalEnergyMinimizer.minimize(context, tolerance=0.5)  # , maxIterations=500)
         return context
 
 
@@ -215,6 +235,7 @@ class OpenMMEq(OMMMinEq):
         integrator = mm.LangevinIntegrator(298*units.kelvin,
                                            5/units.picoseconds,
                                            1 * units.femtoseconds)
+        # integrator = mm.VerletIntegrator(1 * units.femtoseconds)
         context = mm.Context(system, integrator)
         context.setPositions(self.trajectory.xyz[-1])
         context.setPeriodicBoxVectors(*self.trajectory.unitcell_vectors[-1])

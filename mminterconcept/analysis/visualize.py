@@ -4,7 +4,7 @@ import mdtraj
 import numpy
 
 import matplotlib.pylab as plt
-plt.rc('text', usetex=True)
+#plt.rc('text', usetex=True)
 
 def plot_com(time_mdt, com_mdt, time_mda, com_mda):
 
